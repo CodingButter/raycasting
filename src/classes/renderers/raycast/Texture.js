@@ -1,11 +1,11 @@
 import Map from "../../Map";
-import { rangeMap } from "../../utils/Math";
 export default class Texture {
   constructor(canvas) {
     this.__width = canvas.width;
     this.__height = canvas.height;
-    this.__canvas = canvs;
-    this.__imageData = canvas.getImageData(0, 0, width, height);
+    this.__canvas = canvas;
+    const ctx = canvas.getContext("2d");
+    this.__imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   }
   drawImageSlice(ctx, textureOffset, x, y, w, h) {
     var sliceWidth = this.__width / Map.TILE_SIZE;
@@ -15,7 +15,7 @@ export default class Texture {
   putImageData(ctx, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight) {
     var data = this.__imageData.data;
     var height = this.__height;
-    var width = this.__.width;
+    var width = this.__width;
     dirtyX = dirtyX || 0;
     dirtyY = dirtyY || 0;
     dirtyWidth = dirtyWidth !== undefined ? dirtyWidth : width;
