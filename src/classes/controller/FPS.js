@@ -5,7 +5,7 @@ export default class FPS {
     this.__lastmouse = { x: 0, y: 0 };
     this.__entity = new Entity(0, 0, 0, 0, 0);
     this.__canvas = canvas;
-    this.__keys = [];
+    this.__keys = { W: 0, S: 0, D: 0, A: 0 };
 
     this.__canvas.addEventListener("mousemove", e => this.rotateCamera(e));
     document.addEventListener("keydown", e => this.startMove(e));
@@ -22,37 +22,20 @@ export default class FPS {
     this.__entity = entity;
   }
 
-  rotateCamera({ movementX }) {
-    this.__lastmouse.x += movementX;
+  rotateCamera({ movementX, movementY }) {
     this.__entity.angle += movementX / 1000;
+    this.__entity.tilt += movementY;
   }
 
   startMove(e) {
-    if (String.fromCharCode(e.keyCode) === "W") {
-      this.__entity.direction.forward = true;
-    }
-    if (String.fromCharCode(e.keyCode) === "S") {
-      this.__entity.direction.backward = true;
-    }
-    if (String.fromCharCode(e.keyCode) === "A") {
-      this.__entity.direction.left = true;
-    }
-    if (String.fromCharCode(e.keyCode) === "D") {
-      this.__entity.direction.right = true;
-    }
+    this.__keys[String.fromCharCode(e.keyCode)] = 1;
+    this.__entity.direction.walk = this.__keys["W"] - this.__keys["S"];
+    this.__entity.direction.strafe = this.__keys["D"] - this.__keys["A"];
   }
+
   stopMove(e) {
-    if (String.fromCharCode(e.keyCode) === "W") {
-      this.__entity.direction.forward = false;
-    }
-    if (String.fromCharCode(e.keyCode) === "S") {
-      this.__entity.direction.backward = false;
-    }
-    if (String.fromCharCode(e.keyCode) === "A") {
-      this.__entity.direction.left = false;
-    }
-    if (String.fromCharCode(e.keyCode) === "D") {
-      this.__entity.direction.right = false;
-    }
+    this.__keys[String.fromCharCode(e.keyCode)] = 0;
+    this.__entity.direction.walk = this.__keys["W"] - this.__keys["S"];
+    this.__entity.direction.strafe = this.__keys["D"] - this.__keys["A"];
   }
 }

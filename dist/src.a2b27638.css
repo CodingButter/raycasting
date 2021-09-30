@@ -17,9 +17,10 @@ body {
 }
 #app {
   margin: auto;
-  width: 640px;
-  height: 400px;
-  background: #555;
+  width: 380px;
+  height: 200px;
+  /*padding-top: 100%;*/
+  background: black;
 }
 
 

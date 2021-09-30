@@ -5,7 +5,19 @@ export function toRadians(degs) {
 export function toDegrees(rads) {
   return rads * (180 / Math.PI);
 }
-
+export function vectorDistance(vector1, vector2) {
+  const distX = vector1.x - vector2.x;
+  const distY = vector1.y - vector2.y;
+  return Math.sqrt(distX * distX + distY * distY);
+}
+export function normalizeAngle(angle) {
+  angle = angle % (2 * Math.PI);
+  if (angle < 0) angle += 2 * Math.PI;
+  return angle;
+}
+export function rangeMap(n, start1, stop1, start2, stop2) {
+  return ((n - start1) / (stop1 - start1)) * (stop2 - start2) + start2;
+}
 export class Vector {
   constructor(x = 0, y = 0, z = 0) {
     this.__x = x;

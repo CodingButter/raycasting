@@ -3,15 +3,22 @@ import { Player } from "../entities/Player";
 import Camera from "../renderers/Camera";
 import Controller from "../controller/FPS";
 import TwoD from "../renderers/2d";
+import RayCast from "../renderers/raycast";
 import Map from "../Map";
+import { toRadians } from "../utils/Math";
 export default class GameState {
   constructor(handler) {
     this.__handler = handler;
-    this.__ctx = this.__handler.getGame().canvas.getContext();
+    this.setup();
+  }
+  setup() {
+    this.__scale = 0.3;
+    this.__fov = toRadians(60);
+    this.__map = new Map();
     this.__player = new Player(
       this.__handler,
       this.__handler.getGame().width / 2,
-      this.__handler.getGame().height / 2 - 50,
+      this.__handler.getGame().height / 2 + 25,
       0,
       10,
       10
@@ -21,30 +28,38 @@ export default class GameState {
       0,
       0,
       0,
-      this.__width,
-      this.__height,
+      this.__handler.getGame().width,
+      this.__handler.getGame().height,
       this.__fov,
       0
     );
     this.__controller = new Controller(
       this.__handler.getGame().canvas.getCanvas()
     );
-
-    this.__renderer = new TwoD(
-      this.__width,
-      this.__height,
-      this.__camera,
-      this.__ctx
-    );
-    this.__renderer.changeConfig({
+    const renderConfigs = {
       stroke: "2px",
       strokeColor: "black",
-    });
-    this.setup();
-  }
-  setup() {
+    };
+
     this.__controller.attachEntity(this.__player);
-    this.__map = new Map();
+    this.__minimapRenderer = new TwoD(
+      this.__handler.getGame().width,
+      this.__handler.getGame().height,
+      this.__ctx,
+      this.__map,
+      this.__scale,
+      renderConfigs
+    );
+    this.__minimapRenderer.attachCamera(this.__camera);
+    this.__raycastRenderer = new RayCast(
+      this.__handler.getGame().width,
+      this.__handler.getGame().height,
+      this.__ctx,
+      this.__map,
+      this.__scale,
+      renderConfigs
+    );
+    this.__raycastRenderer.attachCamera(this.__camera);
     this.__map.grid.forEach((columns, rowIndex) => {
       columns.map((wall, columnIndex) => {
         if (wall == 1) {
@@ -57,10 +72,13 @@ export default class GameState {
             Map.TILE_SIZE,
             "blue"
           );
-          this.__renderer.addEntity(entity);
+          this.__minimapRenderer.addEntity(entity);
+          this.__raycastRenderer.addEntity(entity);
         }
       });
     });
+
+    this.__camera.followEntity(this.__player);
   }
 
   update(dt) {
@@ -68,8 +86,9 @@ export default class GameState {
     this.__camera.followEntity(this.__player);
   }
 
-  draw() {
-    this.__renderer.render();
+  draw(ctx) {
+    this.__raycastRenderer.render(ctx);
+    //this.__minimapRenderer.render(ctx);
   }
   get map() {
     return this.__map;

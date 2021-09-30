@@ -1,7 +1,7 @@
 import "./styles.css";
 import Game from "./classes/Game";
 const resolution = {
-  width: 320,
+  width: 380,
   height: 200,
 };
 const appElement = document.getElementById("app");

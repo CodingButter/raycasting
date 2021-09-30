@@ -16,12 +16,11 @@ export default class Entity {
     this.__width = width;
     this.__height = height;
     this.__angle = angle;
+    this.__tilt = 0;
     this.__speed = speed;
     this.__direction = {
-      forward: false,
-      backward: false,
-      left: false,
-      right: false,
+      walk: 0,
+      strafe: 0,
     };
   }
   moveX(x) {
@@ -37,34 +36,22 @@ export default class Entity {
     }
   }
   update(dt, map) {
-    if (this.__direction.forward) {
-      this.move(
-        Math.cos(this.__angle) * this.__speed * dt,
-        Math.sin(this.__angle) * this.__speed * dt,
-        map
-      );
-    }
-    if (this.direction.backward) {
-      this.move(
-        Math.cos(this.__angle) * -this.__speed * dt,
-        Math.sin(this.__angle) * -this.__speed * dt,
-        map
-      );
-    }
-    if (this.direction.left) {
-      this.move(
-        Math.cos(this.__angle + toRadians(90)) * -this.__speed * dt,
-        Math.sin(this.__angle + toRadians(90)) * -this.__speed * dt,
-        map
-      );
-    }
-    if (this.direction.right) {
-      this.move(
-        Math.cos(this.__angle + toRadians(90)) * this.__speed * dt,
-        Math.sin(this.__angle + toRadians(90)) * this.__speed * dt,
-        map
-      );
-    }
+    this.move(
+      Math.cos(this.__angle) * this.__speed * this.direction.walk * dt || 0,
+      Math.sin(this.__angle) * this.__speed * this.direction.walk * dt || 0,
+      map
+    );
+    this.move(
+      Math.cos(this.__angle + toRadians(90)) *
+        this.__speed *
+        this.direction.strafe *
+        dt || 0,
+      Math.sin(this.__angle + toRadians(90)) *
+        this.__speed *
+        this.direction.strafe *
+        dt || 0,
+      map
+    );
   }
   get position() {
     return this.__position;
@@ -78,6 +65,9 @@ export default class Entity {
   get angle() {
     return this.__angle;
   }
+  get tilt() {
+    return this.__tilt;
+  }
   get direction() {
     return this.__direction;
   }
@@ -86,6 +76,12 @@ export default class Entity {
   }
   set angle(val) {
     this.__angle = val;
+  }
+  set tilt(val) {
+    this.__tilt = val;
+    this.__tilt = this.__tilt;
+    if (this.__tilt > 200) this.__tilt = 200;
+    if (this.__tilt < -200) this.__tilt = -200;
   }
   set position(val) {
     this.__position = val;

@@ -5,12 +5,15 @@ export default class Camera {
     this.__fov = fov;
     this.__width = width;
     this.__height = height;
-    this.__angle = toRadians(angle);
+    this.__angle = angle;
+    this.__tilt = 0;
+    this.__projectionDistance = this.__width / 2 / Math.tan(this.__fov / 2);
   }
 
   followEntity(entity) {
     this.__position = entity.position;
     this.__angle = entity.angle;
+    this.__tilt = entity.tilt;
   }
   updateFov(angle) {
     this.__fov = angle;
@@ -21,19 +24,30 @@ export default class Camera {
   get angle() {
     return this.__angle;
   }
-
-  get fov() {
-    return toDegrees(this.__fov);
+  get tilt() {
+    return this.__tilt;
   }
 
+  get fov() {
+    return this.__fov;
+  }
+  get width() {
+    return this.__width;
+  }
+  get height() {
+    return this.__height;
+  }
+  get projectionDistance() {
+    return this.__projectionDistance;
+  }
   set position(val) {
     this.__position = val;
   }
   set angle(deg) {
-    this.__angle = toRadians(deg);
+    this.__angle = deg;
   }
 
   set fov(degs) {
-    this.__fov = toRadians(degs);
+    this.__fov = degs;
   }
 }
