@@ -4,7 +4,6 @@ export default class Entity {
     handler,
     x,
     y,
-    z = 0,
     width,
     height,
     speed = 0,
@@ -12,7 +11,7 @@ export default class Entity {
     color = "grey"
   ) {
     this.__handler = handler;
-    this.__position = new Vector(x, y, z);
+    this.__position = new Vector(x, y);
     this.__width = width;
     this.__height = height;
     this.__angle = angle;

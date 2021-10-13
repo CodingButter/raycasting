@@ -1,8 +1,10 @@
 import "./styles.css";
+import "regenerator-runtime/runtime";
+import "core-js/modules/es6.promise";
 import Game from "./classes/Game";
 const resolution = {
-  width: 380,
-  height: 200,
+  width: 300,
+  height: 150,
 };
 const appElement = document.getElementById("app");
 

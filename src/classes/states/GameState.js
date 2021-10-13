@@ -17,19 +17,18 @@ export default class GameState {
     this.__map = new Map();
     this.__player = new Player(
       this.__handler,
-      this.__handler.getGame().width / 2,
-      this.__handler.getGame().height / 2 + 25,
-      0,
-      10,
-      10
+      this.__handler.getGame().width * 0.5,
+      this.__handler.getGame().height * 0.5 + 25,
+      Map.TILE_SIZE * 0.2,
+      Map.TILE_SIZE * 0.5
     );
 
     this.__camera = new Camera(
       0,
       0,
-      0,
       this.__handler.getGame().width,
       this.__handler.getGame().height,
+      Map.TILE_SIZE * 0.5,
       this.__fov,
       0
     );
@@ -67,7 +66,6 @@ export default class GameState {
             this.__handler,
             columnIndex * Map.TILE_SIZE,
             rowIndex * Map.TILE_SIZE,
-            0,
             Map.TILE_SIZE,
             Map.TILE_SIZE,
             "blue"
@@ -84,6 +82,7 @@ export default class GameState {
   update(dt) {
     this.__player.update(dt, this.__map);
     this.__camera.followEntity(this.__player);
+    this.__raycastRenderer.castAllRays();
   }
 
   draw(ctx) {

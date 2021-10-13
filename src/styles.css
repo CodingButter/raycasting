@@ -17,8 +17,8 @@ body {
 }
 #app {
   margin: auto;
-  width: 380px;
-  height: 200px;
+  width: 720px;
+  height: 400px;
   /*padding-top: 100%;*/
   background: black;
 }

@@ -12,10 +12,13 @@ export default class Texture {
     const sliceX = Math.floor(sliceWidth * textureOffset);
     ctx.drawImage(this.__canvas, sliceX, 0, 1, this.__height, x, y, w, h);
   }
+  drawPixel(ctx, px, py, x, y, w) {
+    ctx.drawImage(this.__canvas, px, py, 1, w, x, y, 1, w);
+  }
   putImageData(ctx, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight) {
     var data = this.__imageData.data;
-    var height = this.__height;
-    var width = this.__width;
+    var height = this.__canvas.height;
+    var width = this.__canvas.width;
     dirtyX = dirtyX || 0;
     dirtyY = dirtyY || 0;
     dirtyWidth = dirtyWidth !== undefined ? dirtyWidth : width;

@@ -1,19 +1,32 @@
 import { toDegrees, toRadians, Vector } from "../utils/Math";
 export default class Camera {
-  constructor(x, y, z, width, height, fov, angle) {
-    this.__position = new Vector(x, y, z);
+  constructor(
+    x,
+    y,
+    screenResolutionWidth,
+    screenResolutionHeight,
+    height,
+    fov,
+    angle
+  ) {
+    this.__position = new Vector(x, y);
     this.__fov = fov;
-    this.__width = width;
+    this.__screenResolutionWidth = screenResolutionWidth;
+    this.__screenResolutionHeight = screenResolutionHeight;
     this.__height = height;
+    this.__width = 10;
     this.__angle = angle;
     this.__tilt = 0;
-    this.__projectionDistance = this.__width / 2 / Math.tan(this.__fov / 2);
+
+    this.__projectionDistance =
+      (screenResolutionWidth * 0.5) / Math.tan(this.__fov * 0.5);
   }
 
   followEntity(entity) {
     this.__position = entity.position;
     this.__angle = entity.angle;
     this.__tilt = entity.tilt;
+    this.__height = entity.height;
   }
   updateFov(angle) {
     this.__fov = angle;
@@ -49,5 +62,11 @@ export default class Camera {
 
   set fov(degs) {
     this.__fov = degs;
+  }
+  get screenResolutionWidth() {
+    this.__screenResolutionWidth;
+  }
+  get screenResolutionHeight() {
+    this.__screenResolutionHeight;
   }
 }
