@@ -1,48 +1,45 @@
-const TILE_SIZE = 32;
+import Texture from "./renderers/raycast/Texture"
+const TILE_SIZE = 32
 export default class Map {
-  constructor() {
-    this.__grid = `
-1111111111111111111111111111111111111111111111111
-1000000000010000000000000000000000000000000000001
-1011111110000000001000011111111111111110000000001
-1010000011111000001000010000000000000010000000001
-1010000000000000011111111111110000000010000100001
-1010000000000000010000000000000000000010000100001
-1010010111100000010011111111111111111110000100001
-1010010000100000010000000000000000000000000100001
-1010010000100000010000000000000000000000000100001
-1010011111100000011111111111111111000000000000001
-1000000000000000000000000000000000000000000000001
-1111111111111111111111111111111111111111111111111`
-      .split("\n")
-      .map(row => row.split(""))
-      .filter(row => row.length > 0);
+  constructor(level) {
+    const structure = level.getStructure()
+    const textureMap = level.getTextureMap()
+    this.__wallTextures = textureMap.textures.walls
+    Object.keys(textureMap.textures.walls).forEach((asset) => {
+      this.__wallTextures[asset] = new Texture(textureMap.textures.walls[parseInt(asset)])
+    })
+    this.__wallMap = textureMap.level.map((row) => row.split("").map((title) => parseInt(title)))
+    console.log(this.__wallMap)
+    this.__grid = structure.map((row) => row.split("").map((tile) => parseInt(tile)))
   }
   get columns() {
-    return this.__grid[0].length;
+    return this.__grid[0].length
   }
   get rows() {
-    return this.__grid.length;
+    return this.__grid.length
   }
-
+  getWallTextureAt(column, row) {
+    //console.log({ column, row })
+    return this.__wallTextures[this.__wallMap[row][column] || 1]
+  }
   getWidth() {
-    return this.columns * Map.TILE_SIZE;
+    return this.columns * Map.TILE_SIZE
   }
   getHeight() {
-    return this.rows * Map.TILE_SIZE;
+    return this.rows * Map.TILE_SIZE
   }
 
   get grid() {
-    return this.__grid;
+    return this.__grid
   }
 
   hasWallAt(x, y) {
-    const column = Math.floor(x / Map.TILE_SIZE);
-    const row = Math.floor(y / Map.TILE_SIZE);
-    if (this.__grid[row][column] == 0) return false;
-    return true;
+    const column = Math.floor(x / Map.TILE_SIZE)
+    const row = Math.floor(y / Map.TILE_SIZE)
+    if (this.__grid[row][column] == 0) return false
+    return true
   }
   static get TILE_SIZE() {
-    return TILE_SIZE;
+    return TILE_SIZE
   }
 }

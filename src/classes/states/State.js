@@ -1,4 +1,4 @@
-var currentState;
+var currentState
 export default class State {
   /**
    * @Override
@@ -12,10 +12,12 @@ export default class State {
    */
   update(dt) {}
 
-  getState() {
-    return currentState;
+  static getState() {
+    return currentState
   }
-  setState(state) {
-    currentState = state;
+  static setState(state) {
+    if (currentState) currentState.deconstruct()
+    currentState = state
+    currentState.setup()
   }
 }

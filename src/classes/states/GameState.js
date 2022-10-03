@@ -9,12 +9,14 @@ import { toRadians } from "../utils/Math"
 export default class GameState {
   constructor(handler) {
     this.__handler = handler
-    this.setup()
+  }
+  deconstruct() {
+    this.__controller.deconstruct()
   }
   setup() {
     this.__scale = 0.3
     this.__fov = toRadians(60)
-    this.__map = new Map()
+    this.__map = new Map(this.__handler.getLevel())
     this.__player = new Player(
       this.__handler,
       this.__handler.getGame().width * 0.5,
