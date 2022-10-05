@@ -14,7 +14,7 @@ export default class GameState {
     this.__controller.deconstruct()
   }
   setup() {
-    this.__scale = 0.7
+    this.__scale = 0.3
     this.__fov = toRadians(80)
     this.__map = new Map(this.__handler.getLevel())
     const player = this.__map.getEntities().player
@@ -102,7 +102,7 @@ export default class GameState {
   }
 
   draw(ctx) {
-    //this.__raycastRenderer.render(ctx)
+    this.__raycastRenderer.render(ctx)
     this.__minimapRenderer.render(ctx)
   }
   get map() {

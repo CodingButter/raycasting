@@ -3462,7 +3462,7 @@ var GameState = /*#__PURE__*/function () {
     value: function setup() {
       var _this = this;
 
-      this.__scale = 0.7;
+      this.__scale = 0.3;
       this.__fov = (0, _Math.toRadians)(80);
       this.__map = new _Map.default(this.__handler.getLevel());
 
@@ -3520,7 +3520,8 @@ var GameState = /*#__PURE__*/function () {
   }, {
     key: "draw",
     value: function draw(ctx) {
-      //this.__raycastRenderer.render(ctx)
+      this.__raycastRenderer.render(ctx);
+
       this.__minimapRenderer.render(ctx);
     }
   }, {
@@ -4355,9 +4356,9 @@ var LevelSelectState = /*#__PURE__*/function () {
                     var lvl = new _Level.default(level);
                     lvl.load();
 
-                    _this.__handler.setLevel(lvl); //lvl.on("status_change", console.log)
+                    _this.__handler.setLevel(lvl);
 
-
+                    lvl.on("status_change", console.log);
                     lvl.on("load_complete", function () {
                       _this.__handler.getGame().setState("game");
                     });
@@ -4545,7 +4546,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64520" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50332" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
