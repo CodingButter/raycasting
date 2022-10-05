@@ -1,4 +1,5 @@
 import Map from "./Map.js"
+import Texture from "./renderers/raycast/Texture.js"
 import ImageLoader from "./graphics/ImageLoader.js"
 import AssetLoader from "./utils/AssetLoader.js"
 const levelsJson = "./levels/levels.json"
@@ -24,9 +25,11 @@ export default class Level {
 
   async load() {
     this.updateStatus("loading level structure")
-    this.__structure = await Level.getLevelStructure(this.__path)
+    this.__structures = await Level.getLevelStructure(this.__path)
     this.updateStatus("loading texture map")
     this.__textureMap = await Level.getTextureMap(this.__path)
+    this.updateStatus("loading Entities")
+    this.__entities = await Level.getEntities(this.__path)
     this.updateStatus("loading textures")
     this.__textureMap.textures = await this.loadTextures()
     this.loadComplete()
@@ -40,9 +43,10 @@ export default class Level {
           Object.keys(textures[textureType]).map(async (textureKey) => {
             const imagename = textures[textureType][textureKey]
             this.updateStatus(`loading texture ${this.__path}/${textureType}/${imagename}`)
-            const texture = await ImageLoader.loadImage(
+            const image = await ImageLoader.loadImage(
               `${this.__path}/textures/${textureType}/${imagename}`
             )
+            const texture = new Texture(image)
             loadedTextures[textureType][textureKey] = texture
             return texture
           })
@@ -52,8 +56,11 @@ export default class Level {
     })
   }
 
-  getStructure() {
-    return this.__structure
+  getStructures() {
+    return this.__structures
+  }
+  getEntities() {
+    return this.__entities
   }
   getTextureMap() {
     return this.__textureMap
@@ -76,7 +83,9 @@ export default class Level {
   static async getTextureMap(path) {
     return await AssetLoader.loadJson(`${path}/maps/textures.json`)
   }
-
+  static async getEntities(path) {
+    return await AssetLoader.loadJson(`${path}/maps/entities.json`)
+  }
   static async getLevels() {
     return await AssetLoader.loadJson(levelsJson)
   }

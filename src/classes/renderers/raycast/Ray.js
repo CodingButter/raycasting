@@ -6,6 +6,7 @@ export default class Ray {
     this.__wasHitVertical = false
     this.__width = width
     this.__height = height
+    this.__startPosition = new Vector(x, y)
     this.__position = new Vector(x, y)
     this.__angle = normalizeAngle(angle)
     this.__map = map
@@ -145,15 +146,21 @@ export default class Ray {
   get verticalHit() {
     return this.__wasHitVertical
   }
+  get texture() {
+    const x = this.__startPosition.x + (this.__distance + 0.01) * Math.cos(this.__angle)
+    const y = this.__startPosition.y + (this.__distance + 0.01) * Math.sin(this.__angle)
+    return this.__map.getWallTextureAt(x, y)
+  }
+
   get column() {
-    const column = Math.floor(this.__position.x / Map.TILE_SIZE)
-    if (this.__isRayFacingDown) return column - 1
-    return column
+    return Math.floor(
+      (this.__startPosition.x + (this.__distance + 0.01) * Math.cos(this.__angle)) / Map.TILE_SIZE
+    )
   }
   get row() {
-    const row = Math.floor(this.__position.y / Map.TILE_SIZE)
-    if (this.__isRayFacingLeft) return row - 1
-    return row
+    return Math.floor(
+      (this.__startPosition.y + (this.__distance + 0.01) * Math.sin(this.__angle)) / Map.TILE_SIZE
+    )
   }
   get textureOffset() {
     return this.__textureOffset
@@ -169,5 +176,11 @@ export default class Ray {
   }
   get facingRight() {
     return this.__isRayFacingRight
+  }
+  drawRay(ctx, scale) {
+    ctx.beginPath()
+    ctx.moveTo(this.__startPosition.x * scale, this.__startPosition.y * scale)
+    ctx.lineTo(this.__position.x * scale, this.__position.y * scale)
+    ctx.stroke()
   }
 }

@@ -7,6 +7,9 @@ export default class Texture {
     const ctx = canvas.getContext("2d")
     this.__imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   }
+  drawImage(ctx, x, y, w, h) {
+    ctx.drawImage(this.__canvas, x, y, w, h)
+  }
   drawImageSlice(ctx, textureOffset, x, y, w, h) {
     var sliceWidth = this.__width / Map.TILE_SIZE
     const sliceX = Math.floor(sliceWidth * textureOffset)

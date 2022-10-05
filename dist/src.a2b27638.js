@@ -2318,7 +2318,7 @@ var Entity = /*#__PURE__*/function () {
   function Entity(handler, x, y, width, height) {
     var speed = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 0;
     var angle = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 0;
-    var color = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : "grey";
+    var color = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : "green";
 
     _classCallCheck(this, Entity);
 
@@ -2327,6 +2327,7 @@ var Entity = /*#__PURE__*/function () {
     this.__width = width;
     this.__height = height;
     this.__angle = angle;
+    this.__color = color;
     this.__tilt = 0;
     this.__speed = speed;
     this.__direction = {
@@ -2410,6 +2411,14 @@ var Entity = /*#__PURE__*/function () {
     set: function set(val) {
       this.__direction = val;
     }
+  }, {
+    key: "color",
+    get: function get() {
+      return this.__color;
+    },
+    set: function set(val) {
+      this.__color = val;
+    }
   }]);
 
   return Entity;
@@ -2490,7 +2499,7 @@ var Camera = /*#__PURE__*/function () {
     this.__screenResolutionWidth = screenResolutionWidth;
     this.__screenResolutionHeight = screenResolutionHeight;
     this.__height = height;
-    this.__width = 10;
+    this.__width = this.__screenResolutionWidth;
     this.__angle = angle;
     this.__tilt = 0;
     this.__projectionDistance = screenResolutionWidth * 0.5 / Math.tan(this.__fov * 0.5);
@@ -2700,6 +2709,11 @@ var Texture = /*#__PURE__*/function () {
   }
 
   _createClass(Texture, [{
+    key: "drawImage",
+    value: function drawImage(ctx, x, y, w, h) {
+      ctx.drawImage(this.__canvas, x, y, w, h);
+    }
+  }, {
     key: "drawImageSlice",
     value: function drawImageSlice(ctx, textureOffset, x, y, w, h) {
       var sliceWidth = this.__width / _Map.default.TILE_SIZE;
@@ -2750,6 +2764,12 @@ var _Texture = _interopRequireDefault(require("./renderers/raycast/Texture"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { _defineProperty(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -2764,21 +2784,22 @@ var Map = /*#__PURE__*/function () {
 
     _classCallCheck(this, Map);
 
-    var structure = level.getStructure();
+    var structures = level.getStructures();
     var textureMap = level.getTextureMap();
-    this.__wallTextures = textureMap.textures.walls;
-    Object.keys(textureMap.textures.walls).forEach(function (asset) {
-      _this.__wallTextures[asset] = new _Texture.default(textureMap.textures.walls[parseInt(asset)]);
-    });
-    this.__wallMap = textureMap.level.map(function (row) {
-      return row.split("").map(function (title) {
-        return parseInt(title);
+    this.__entities = level.getEntities();
+    this.__textures = _objectSpread({}, textureMap.textures);
+    this.__wallMap = textureMap.walls.map(function (row) {
+      return row.split("").map(function (column) {
+        return parseInt(column);
       });
     });
     console.log(this.__wallMap);
-    this.__grid = structure.map(function (row) {
-      return row.split("").map(function (tile) {
-        return parseInt(tile);
+    this.__structures = _objectSpread({}, structures);
+    Object.keys(structures).forEach(function (grid) {
+      _this.__structures[grid] = structures[grid].map(function (row) {
+        return row.split("").map(function (tile) {
+          return parseInt(tile);
+        });
       });
     });
   }
@@ -2786,18 +2807,24 @@ var Map = /*#__PURE__*/function () {
   _createClass(Map, [{
     key: "columns",
     get: function get() {
-      return this.__grid[0].length;
+      return this.__structures.walls[0].length;
     }
   }, {
     key: "rows",
     get: function get() {
-      return this.__grid.length;
+      return this.__structures.walls.length;
+    }
+  }, {
+    key: "getEntities",
+    value: function getEntities() {
+      return this.__entities;
     }
   }, {
     key: "getWallTextureAt",
-    value: function getWallTextureAt(column, row) {
-      //console.log({ column, row })
-      return this.__wallTextures[this.__wallMap[row][column] || 1];
+    value: function getWallTextureAt(x, y) {
+      var column = Math.floor(x / Map.TILE_SIZE);
+      var row = Math.floor(y / Map.TILE_SIZE);
+      return this.__textures.walls[this.__wallMap[row][column] || 1];
     }
   }, {
     key: "getWidth",
@@ -2812,14 +2839,14 @@ var Map = /*#__PURE__*/function () {
   }, {
     key: "grid",
     get: function get() {
-      return this.__grid;
+      return this.__structures.walls;
     }
   }, {
     key: "hasWallAt",
     value: function hasWallAt(x, y) {
       var column = Math.floor(x / Map.TILE_SIZE);
       var row = Math.floor(y / Map.TILE_SIZE);
-      if (this.__grid[row][column] == 0) return false;
+      if (this.__structures.walls[row][column] == 0) return false;
       return true;
     }
   }], [{
@@ -2863,6 +2890,7 @@ var Ray = /*#__PURE__*/function () {
     this.__wasHitVertical = false;
     this.__width = width;
     this.__height = height;
+    this.__startPosition = new _Math.Vector(x, y);
     this.__position = new _Math.Vector(x, y);
     this.__angle = (0, _Math.normalizeAngle)(angle);
     this.__map = map;
@@ -2986,18 +3014,21 @@ var Ray = /*#__PURE__*/function () {
       return this.__wasHitVertical;
     }
   }, {
+    key: "texture",
+    get: function get() {
+      var x = this.__startPosition.x + (this.__distance + 0.01) * Math.cos(this.__angle);
+      var y = this.__startPosition.y + (this.__distance + 0.01) * Math.sin(this.__angle);
+      return this.__map.getWallTextureAt(x, y);
+    }
+  }, {
     key: "column",
     get: function get() {
-      var column = Math.floor(this.__position.x / _Map.default.TILE_SIZE);
-      if (this.__isRayFacingDown) return column - 1;
-      return column;
+      return Math.floor((this.__startPosition.x + (this.__distance + 0.01) * Math.cos(this.__angle)) / _Map.default.TILE_SIZE);
     }
   }, {
     key: "row",
     get: function get() {
-      var row = Math.floor(this.__position.y / _Map.default.TILE_SIZE);
-      if (this.__isRayFacingLeft) return row - 1;
-      return row;
+      return Math.floor((this.__startPosition.y + (this.__distance + 0.01) * Math.sin(this.__angle)) / _Map.default.TILE_SIZE);
     }
   }, {
     key: "textureOffset",
@@ -3023,6 +3054,14 @@ var Ray = /*#__PURE__*/function () {
     key: "facingRight",
     get: function get() {
       return this.__isRayFacingRight;
+    }
+  }, {
+    key: "drawRay",
+    value: function drawRay(ctx, scale) {
+      ctx.beginPath();
+      ctx.moveTo(this.__startPosition.x * scale, this.__startPosition.y * scale);
+      ctx.lineTo(this.__position.x * scale, this.__position.y * scale);
+      ctx.stroke();
     }
   }]);
 
@@ -3085,13 +3124,15 @@ var TwoD = /*#__PURE__*/function () {
     }
   }, {
     key: "castAllRays",
-    value: function castAllRays() {
+    value: function castAllRays(ctx) {
       var rayAngle = this.__camera.angle - this.__camera.fov / 2;
       this.__rays = [];
 
       for (var i = 0; i < this.__camera.width; i++) {
         var ray = new _Ray.default(this.__width, this.__height, this.__camera.position, rayAngle, this.__map);
         ray.cast();
+        ctx.strokeStyle = "white";
+        ray.drawRay(ctx, this.__scale);
 
         this.__rays.push(ray);
 
@@ -3103,7 +3144,7 @@ var TwoD = /*#__PURE__*/function () {
     value: function render(ctx) {
       var _this = this;
 
-      this.castAllRays();
+      this.castAllRays(ctx);
       ctx.save();
       ctx.globalAlpha = 0.6;
       ctx.fillStyle = "black";
@@ -3351,9 +3392,7 @@ var RayCast = /*#__PURE__*/function () {
 
         var wallPosition = this.__height * 0.5 - wallHeight * 0.5;
         wallPosition -= rayDistance * this.__camera.tilt / rayDistance;
-
-        this.__map.getWallTextureAt(ray.column, ray.row).drawImageSlice(ctx, ray.textureOffset, column, wallPosition, 1, wallHeight);
-
+        ray.texture.drawImageSlice(ctx, ray.textureOffset, column, wallPosition, 1, wallHeight);
         var fillShade = (0, _Math.rangeMap)(rayDistance, 0, this.__width, 0, this.__wallShade);
         if (!ray.verticalHit) fillShade += 0.5;
         ctx.globalAlpha = fillShade;
@@ -3423,10 +3462,13 @@ var GameState = /*#__PURE__*/function () {
     value: function setup() {
       var _this = this;
 
-      this.__scale = 0.3;
-      this.__fov = (0, _Math.toRadians)(60);
+      this.__scale = 0.7;
+      this.__fov = (0, _Math.toRadians)(80);
       this.__map = new _Map.default(this.__handler.getLevel());
-      this.__player = new _Player.Player(this.__handler, this.__handler.getGame().width * 0.5, this.__handler.getGame().height * 0.5 + 25, _Map.default.TILE_SIZE * 0.2, _Map.default.TILE_SIZE * 0.5);
+
+      var player = this.__map.getEntities().player;
+
+      this.__player = new _Player.Player(this.__handler, player.position.x * _Map.default.TILE_SIZE, player.position.y * _Map.default.TILE_SIZE, _Map.default.TILE_SIZE * 0.2, _Map.default.TILE_SIZE * 0.5);
       this.__camera = new _Camera.default(0, 0, this.__handler.getGame().width, this.__handler.getGame().height, _Map.default.TILE_SIZE * 0.5, this.__fov, 0);
       this.__controller = new _FPS.default(this.__handler.getGame().canvas.getCanvas());
       var renderConfigs = {
@@ -3447,13 +3489,21 @@ var GameState = /*#__PURE__*/function () {
       this.__map.grid.forEach(function (columns, rowIndex) {
         columns.map(function (wall, columnIndex) {
           if (wall == 1) {
-            var entity = new _entities.default(_this.__handler, columnIndex * _Map.default.TILE_SIZE, rowIndex * _Map.default.TILE_SIZE, _Map.default.TILE_SIZE, _Map.default.TILE_SIZE, "blue");
+            var entity = new _entities.default(_this.__handler, columnIndex * _Map.default.TILE_SIZE, rowIndex * _Map.default.TILE_SIZE, _Map.default.TILE_SIZE, _Map.default.TILE_SIZE, 0, 0, "blue");
 
             _this.__minimapRenderer.addEntity(entity);
 
             _this.__raycastRenderer.addEntity(entity);
           }
         });
+      });
+
+      this.__map.getEntities().enemies.forEach(function (enemy) {
+        var entity = new _entities.default(_this.__handler, enemy.position.x * _Map.default.TILE_SIZE, enemy.position.y * _Map.default.TILE_SIZE, _Map.default.TILE_SIZE * 0.5, _Map.default.TILE_SIZE * 0.5, 0, 0, "red");
+
+        _this.__minimapRenderer.addEntity(entity);
+
+        _this.__raycastRenderer.addEntity(entity);
       });
 
       this.__camera.followEntity(this.__player);
@@ -3470,8 +3520,7 @@ var GameState = /*#__PURE__*/function () {
   }, {
     key: "draw",
     value: function draw(ctx) {
-      this.__raycastRenderer.render(ctx);
-
+      //this.__raycastRenderer.render(ctx)
       this.__minimapRenderer.render(ctx);
     }
   }, {
@@ -3562,6 +3611,8 @@ exports.default = void 0;
 
 var _Map = _interopRequireDefault(require("./Map.js"));
 
+var _Texture = _interopRequireDefault(require("./renderers/raycast/Texture.js"));
+
 var _ImageLoader = _interopRequireDefault(require("./graphics/ImageLoader.js"));
 
 var _AssetLoader = _interopRequireDefault(require("./utils/AssetLoader.js"));
@@ -3627,22 +3678,28 @@ var Level = /*#__PURE__*/function () {
                 return Level.getLevelStructure(this.__path);
 
               case 3:
-                this.__structure = _context.sent;
+                this.__structures = _context.sent;
                 this.updateStatus("loading texture map");
                 _context.next = 7;
                 return Level.getTextureMap(this.__path);
 
               case 7:
                 this.__textureMap = _context.sent;
-                this.updateStatus("loading textures");
+                this.updateStatus("loading Entities");
                 _context.next = 11;
-                return this.loadTextures();
+                return Level.getEntities(this.__path);
 
               case 11:
+                this.__entities = _context.sent;
+                this.updateStatus("loading textures");
+                _context.next = 15;
+                return this.loadTextures();
+
+              case 15:
                 this.__textureMap.textures = _context.sent;
                 this.loadComplete();
 
-              case 13:
+              case 17:
               case "end":
                 return _context.stop();
             }
@@ -3680,7 +3737,7 @@ var Level = /*#__PURE__*/function () {
                               _context3.next = 2;
                               return Promise.all(Object.keys(textures[textureType]).map( /*#__PURE__*/function () {
                                 var _ref2 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(textureKey) {
-                                  var imagename, texture;
+                                  var imagename, image, texture;
                                   return _regeneratorRuntime().wrap(function _callee2$(_context2) {
                                     while (1) {
                                       switch (_context2.prev = _context2.next) {
@@ -3693,11 +3750,12 @@ var Level = /*#__PURE__*/function () {
                                           return _ImageLoader.default.loadImage("".concat(_this.__path, "/textures/").concat(textureType, "/").concat(imagename));
 
                                         case 4:
-                                          texture = _context2.sent;
+                                          image = _context2.sent;
+                                          texture = new _Texture.default(image);
                                           loadedTextures[textureType][textureKey] = texture;
                                           return _context2.abrupt("return", texture);
 
-                                        case 7:
+                                        case 8:
                                         case "end":
                                           return _context2.stop();
                                       }
@@ -3742,9 +3800,14 @@ var Level = /*#__PURE__*/function () {
       return loadTextures;
     }()
   }, {
-    key: "getStructure",
-    value: function getStructure() {
-      return this.__structure;
+    key: "getStructures",
+    value: function getStructures() {
+      return this.__structures;
+    }
+  }, {
+    key: "getEntities",
+    value: function getEntities() {
+      return this.__entities;
     }
   }, {
     key: "getTextureMap",
@@ -3824,15 +3887,15 @@ var Level = /*#__PURE__*/function () {
       return getTextureMap;
     }()
   }, {
-    key: "getLevels",
+    key: "getEntities",
     value: function () {
-      var _getLevels = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee7() {
+      var _getEntities = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee7(path) {
         return _regeneratorRuntime().wrap(function _callee7$(_context7) {
           while (1) {
             switch (_context7.prev = _context7.next) {
               case 0:
                 _context7.next = 2;
-                return _AssetLoader.default.loadJson(levelsJson);
+                return _AssetLoader.default.loadJson("".concat(path, "/maps/entities.json"));
 
               case 2:
                 return _context7.abrupt("return", _context7.sent);
@@ -3843,6 +3906,34 @@ var Level = /*#__PURE__*/function () {
             }
           }
         }, _callee7);
+      }));
+
+      function getEntities(_x5) {
+        return _getEntities.apply(this, arguments);
+      }
+
+      return getEntities;
+    }()
+  }, {
+    key: "getLevels",
+    value: function () {
+      var _getLevels = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee8() {
+        return _regeneratorRuntime().wrap(function _callee8$(_context8) {
+          while (1) {
+            switch (_context8.prev = _context8.next) {
+              case 0:
+                _context8.next = 2;
+                return _AssetLoader.default.loadJson(levelsJson);
+
+              case 2:
+                return _context8.abrupt("return", _context8.sent);
+
+              case 3:
+              case "end":
+                return _context8.stop();
+            }
+          }
+        }, _callee8);
       }));
 
       function getLevels() {
@@ -3857,7 +3948,7 @@ var Level = /*#__PURE__*/function () {
 }();
 
 exports.default = Level;
-},{"./Map.js":"src/classes/Map.js","./graphics/ImageLoader.js":"src/classes/graphics/ImageLoader.js","./utils/AssetLoader.js":"src/classes/utils/AssetLoader.js"}],"src/classes/controller/Menu.js":[function(require,module,exports) {
+},{"./Map.js":"src/classes/Map.js","./renderers/raycast/Texture.js":"src/classes/renderers/raycast/Texture.js","./graphics/ImageLoader.js":"src/classes/graphics/ImageLoader.js","./utils/AssetLoader.js":"src/classes/utils/AssetLoader.js"}],"src/classes/controller/Menu.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -4264,9 +4355,9 @@ var LevelSelectState = /*#__PURE__*/function () {
                     var lvl = new _Level.default(level);
                     lvl.load();
 
-                    _this.__handler.setLevel(lvl);
+                    _this.__handler.setLevel(lvl); //lvl.on("status_change", console.log)
 
-                    lvl.on("status_change", console.log);
+
                     lvl.on("load_complete", function () {
                       _this.__handler.getGame().setState("game");
                     });
@@ -4454,7 +4545,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53226" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64520" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

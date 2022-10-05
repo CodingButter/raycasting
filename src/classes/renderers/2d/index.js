@@ -19,19 +19,20 @@ export default class TwoD {
   changeConfig(configs) {
     this.__configs = { ...this.__configs, ...configs }
   }
-  castAllRays() {
+  castAllRays(ctx) {
     var rayAngle = this.__camera.angle - this.__camera.fov / 2
     this.__rays = []
     for (var i = 0; i < this.__camera.width; i++) {
       var ray = new Ray(this.__width, this.__height, this.__camera.position, rayAngle, this.__map)
       ray.cast()
-
+      ctx.strokeStyle = "white"
+      ray.drawRay(ctx, this.__scale)
       this.__rays.push(ray)
       rayAngle += this.__camera.fov / this.__camera.width
     }
   }
   render(ctx) {
-    this.castAllRays()
+    this.castAllRays(ctx)
     ctx.save()
     ctx.globalAlpha = 0.6
     ctx.fillStyle = "black"

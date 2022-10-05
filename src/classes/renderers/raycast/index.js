@@ -58,9 +58,7 @@ export default class RayCast {
       //console.log(rayDistance);
       var wallPosition = this.__height * 0.5 - wallHeight * 0.5
       wallPosition -= (rayDistance * this.__camera.tilt) / rayDistance
-      this.__map
-        .getWallTextureAt(ray.column, ray.row)
-        .drawImageSlice(ctx, ray.textureOffset, column, wallPosition, 1, wallHeight)
+      ray.texture.drawImageSlice(ctx, ray.textureOffset, column, wallPosition, 1, wallHeight)
       const fillShade = rangeMap(rayDistance, 0, this.__width, 0, this.__wallShade)
       if (!ray.verticalHit) fillShade += 0.5
       ctx.globalAlpha = fillShade

@@ -14,13 +14,14 @@ export default class GameState {
     this.__controller.deconstruct()
   }
   setup() {
-    this.__scale = 0.3
-    this.__fov = toRadians(60)
+    this.__scale = 0.7
+    this.__fov = toRadians(80)
     this.__map = new Map(this.__handler.getLevel())
+    const player = this.__map.getEntities().player
     this.__player = new Player(
       this.__handler,
-      this.__handler.getGame().width * 0.5,
-      this.__handler.getGame().height * 0.5 + 25,
+      player.position.x * Map.TILE_SIZE,
+      player.position.y * Map.TILE_SIZE,
       Map.TILE_SIZE * 0.2,
       Map.TILE_SIZE * 0.5
     )
@@ -68,6 +69,8 @@ export default class GameState {
             rowIndex * Map.TILE_SIZE,
             Map.TILE_SIZE,
             Map.TILE_SIZE,
+            0,
+            0,
             "blue"
           )
           this.__minimapRenderer.addEntity(entity)
@@ -75,7 +78,20 @@ export default class GameState {
         }
       })
     })
-
+    this.__map.getEntities().enemies.forEach((enemy) => {
+      const entity = new Entity(
+        this.__handler,
+        enemy.position.x * Map.TILE_SIZE,
+        enemy.position.y * Map.TILE_SIZE,
+        Map.TILE_SIZE * 0.5,
+        Map.TILE_SIZE * 0.5,
+        0,
+        0,
+        "red"
+      )
+      this.__minimapRenderer.addEntity(entity)
+      this.__raycastRenderer.addEntity(entity)
+    })
     this.__camera.followEntity(this.__player)
   }
 
@@ -86,7 +102,7 @@ export default class GameState {
   }
 
   draw(ctx) {
-    this.__raycastRenderer.render(ctx)
+    //this.__raycastRenderer.render(ctx)
     this.__minimapRenderer.render(ctx)
   }
   get map() {
