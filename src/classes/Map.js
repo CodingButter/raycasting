@@ -7,7 +7,7 @@ export default class Map {
     this.__entities = level.getEntities()
     this.__textures = { ...textureMap.textures }
     this.__wallMap = textureMap.walls.map((row) => row.split("").map((column) => parseInt(column)))
-    console.log(this.__wallMap)
+    this.__floorMap = textureMap.floor
     this.__structures = { ...structures }
     Object.keys(structures).forEach((grid) => {
       this.__structures[grid] = structures[grid].map((row) =>
@@ -39,6 +39,13 @@ export default class Map {
 
   get grid() {
     return this.__structures.walls
+  }
+
+  get textures() {
+    return this.__textures
+  }
+  get floorMap() {
+    return this.__floorMap
   }
 
   hasWallAt(x, y) {

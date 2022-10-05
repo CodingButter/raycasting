@@ -3,11 +3,11 @@ export default class ImageLoader {
     return await new Promise((resolve, reject) => {
       const image = new Image()
       image.crossOrigin = "Anonymous"
+      const canvas = document.createElement("canvas")
+      const ctx = canvas.getContext("2d")
       image.onload = () => {
-        const canvas = document.createElement("canvas")
         canvas.width = image.width
         canvas.height = image.height
-        const ctx = canvas.getContext("2d")
         ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
         resolve(canvas)
       }

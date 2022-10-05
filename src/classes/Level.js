@@ -32,7 +32,33 @@ export default class Level {
     this.__entities = await Level.getEntities(this.__path)
     this.updateStatus("loading textures")
     this.__textureMap.textures = await this.loadTextures()
+    this.updateStatus("stitching floor textures")
+    this.__textureMap.floor = await this.stitchFloorTextures()
     this.loadComplete()
+  }
+  async stitchFloorTextures() {
+    this.__floorMap = this.__textureMap.floor.map((row) =>
+      row.split("").map((column) => parseInt(column))
+    )
+    const floorCanvas = document.createElement("canvas")
+    floorCanvas.width = Map.TILE_SIZE * this.__structures["floor"][0].length
+    floorCanvas.height = Map.TILE_SIZE * this.__structures["floor"].length
+    const floorContext = floorCanvas.getContext("2d")
+
+    this.__floorMap.forEach((row, rowIndex) => {
+      row.forEach((tile, columnIndex) => {
+        if (tile == 0) return
+        const texture = this.__textureMap.textures.floor[tile]
+        texture.drawImage(
+          floorContext,
+          columnIndex * Map.TILE_SIZE,
+          rowIndex * Map.TILE_SIZE,
+          Map.TILE_SIZE,
+          Map.TILE_SIZE
+        )
+      })
+    })
+    return new Texture(floorCanvas)
   }
   async loadTextures() {
     const textures = this.__textureMap.textures
@@ -43,15 +69,16 @@ export default class Level {
           Object.keys(textures[textureType]).map(async (textureKey) => {
             const imagename = textures[textureType][textureKey]
             this.updateStatus(`loading texture ${this.__path}/${textureType}/${imagename}`)
-            const image = await ImageLoader.loadImage(
-              `${this.__path}/textures/${textureType}/${imagename}`
-            )
+            const imagePath = `${this.__path}/textures/${textureType}/${imagename}`
+            const image = await ImageLoader.loadImage(imagePath)
             const texture = new Texture(image)
             loadedTextures[textureType][textureKey] = texture
             return texture
           })
         )
-        resolve(loadedTextures)
+        setTimeout(() => {
+          resolve(loadedTextures)
+        }, 500)
       })
     })
   }

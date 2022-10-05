@@ -2,19 +2,18 @@ import { toRadians } from "../../utils/Math"
 import Ray from "../raycast/Ray"
 
 export default class TwoD {
-  constructor(width, height, ctx, map, scale, configs = {}) {
+  constructor(handler, ctx, map, scale, configs = {}) {
+    this.__handler = handler
+    this.__camera = this.__handler.getCamera()
     this.__scale = scale
-    this.__width = width
-    this.__height = height
+    this.__width = this.__handler.getGame().width
+    this.__height = this.__handler.getGame().height
     this.__camerasize = 10
     this.__ctx = ctx
     this.__configs = configs
     this.entities = []
     this.__rays = []
     this.__map = map
-  }
-  attachCamera(camera) {
-    this.__camera = camera
   }
   changeConfig(configs) {
     this.__configs = { ...this.__configs, ...configs }

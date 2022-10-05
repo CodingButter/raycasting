@@ -17,6 +17,7 @@ export default class GameState {
     this.__scale = 0.3
     this.__fov = toRadians(80)
     this.__map = new Map(this.__handler.getLevel())
+
     const player = this.__map.getEntities().player
     this.__player = new Player(
       this.__handler,
@@ -35,6 +36,7 @@ export default class GameState {
       this.__fov,
       0
     )
+    this.__handler.setCamera(this.__camera)
     this.__controller = new Controller(this.__handler.getGame().canvas.getCanvas())
     const renderConfigs = {
       stroke: "2px",
@@ -43,23 +45,19 @@ export default class GameState {
 
     this.__controller.attachEntity(this.__player)
     this.__minimapRenderer = new TwoD(
-      this.__handler.getGame().width,
-      this.__handler.getGame().height,
+      this.__handler,
       this.__ctx,
       this.__map,
       this.__scale,
       renderConfigs
     )
-    this.__minimapRenderer.attachCamera(this.__camera)
     this.__raycastRenderer = new RayCast(
-      this.__handler.getGame().width,
-      this.__handler.getGame().height,
+      this.__handler,
       this.__ctx,
       this.__map,
       this.__scale,
       renderConfigs
     )
-    this.__raycastRenderer.attachCamera(this.__camera)
     this.__map.grid.forEach((columns, rowIndex) => {
       columns.map((wall, columnIndex) => {
         if (wall == 1) {
@@ -104,8 +102,21 @@ export default class GameState {
   draw(ctx) {
     this.__raycastRenderer.render(ctx)
     this.__minimapRenderer.render(ctx)
+    this.__map.__floorMap.drawImage(
+      ctx,
+      0,
+      0,
+      this.__handler.getGame().width,
+      this.__handler.getGame().height,
+      0.5,
+      0,
+      0
+    )
   }
   get map() {
     return this.__map
+  }
+  get camera() {
+    return this.__camera
   }
 }

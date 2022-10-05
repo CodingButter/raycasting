@@ -16,7 +16,7 @@ export default class Camera {
   followEntity(entity) {
     this.__position = entity.position
     this.__angle = entity.angle
-    this.__tilt = entity.tilt
+    this.__tilt = 0 // entity.tilt
     this.__height = entity.height
   }
   updateFov(angle) {

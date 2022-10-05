@@ -12,4 +12,10 @@ export default class Handler {
   getLevel() {
     return this.__level
   }
+  setCamera(camera) {
+    this.__camera = camera
+  }
+  getCamera() {
+    return this.__camera
+  }
 }

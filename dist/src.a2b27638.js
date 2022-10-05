@@ -2073,6 +2073,16 @@ var Handler = /*#__PURE__*/function () {
     value: function getLevel() {
       return this.__level;
     }
+  }, {
+    key: "setCamera",
+    value: function setCamera(camera) {
+      this.__camera = camera;
+    }
+  }, {
+    key: "getCamera",
+    value: function getCamera() {
+      return this.__camera;
+    }
   }]);
 
   return Handler;
@@ -2510,7 +2520,8 @@ var Camera = /*#__PURE__*/function () {
     value: function followEntity(entity) {
       this.__position = entity.position;
       this.__angle = entity.angle;
-      this.__tilt = entity.tilt;
+      this.__tilt = 0; // entity.tilt
+
       this.__height = entity.height;
     }
   }, {
@@ -2711,7 +2722,15 @@ var Texture = /*#__PURE__*/function () {
   _createClass(Texture, [{
     key: "drawImage",
     value: function drawImage(ctx, x, y, w, h) {
+      var radians = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 0;
+      var skewX = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 0;
+      var skewY = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : 0;
+      ctx.save();
+      ctx.translate(-w / 2, -h / 2);
+      ctx.rotate(radians);
       ctx.drawImage(this.__canvas, x, y, w, h);
+      ctx.translate(w / 2, h / 2);
+      ctx.restore();
     }
   }, {
     key: "drawImageSlice",
@@ -2793,7 +2812,7 @@ var Map = /*#__PURE__*/function () {
         return parseInt(column);
       });
     });
-    console.log(this.__wallMap);
+    this.__floorMap = textureMap.floor;
     this.__structures = _objectSpread({}, structures);
     Object.keys(structures).forEach(function (grid) {
       _this.__structures[grid] = structures[grid].map(function (row) {
@@ -2840,6 +2859,16 @@ var Map = /*#__PURE__*/function () {
     key: "grid",
     get: function get() {
       return this.__structures.walls;
+    }
+  }, {
+    key: "textures",
+    get: function get() {
+      return this.__textures;
+    }
+  }, {
+    key: "floorMap",
+    get: function get() {
+      return this.__floorMap;
     }
   }, {
     key: "hasWallAt",
@@ -3096,14 +3125,16 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
 
 var TwoD = /*#__PURE__*/function () {
-  function TwoD(width, height, ctx, map, scale) {
-    var configs = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : {};
+  function TwoD(handler, ctx, map, scale) {
+    var configs = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
 
     _classCallCheck(this, TwoD);
 
+    this.__handler = handler;
+    this.__camera = this.__handler.getCamera();
     this.__scale = scale;
-    this.__width = width;
-    this.__height = height;
+    this.__width = this.__handler.getGame().width;
+    this.__height = this.__handler.getGame().height;
     this.__camerasize = 10;
     this.__ctx = ctx;
     this.__configs = configs;
@@ -3113,11 +3144,6 @@ var TwoD = /*#__PURE__*/function () {
   }
 
   _createClass(TwoD, [{
-    key: "attachCamera",
-    value: function attachCamera(camera) {
-      this.__camera = camera;
-    }
-  }, {
     key: "changeConfig",
     value: function changeConfig(configs) {
       this.__configs = _objectSpread(_objectSpread({}, this.__configs), configs);
@@ -3180,13 +3206,295 @@ var TwoD = /*#__PURE__*/function () {
 }();
 
 exports.default = TwoD;
-},{"../../utils/Math":"src/classes/utils/Math.js","../raycast/Ray":"src/classes/renderers/raycast/Ray.js"}],"src/textures/checkerboard.jpg":[function(require,module,exports) {
-module.exports = "/checkerboard.2165cef2.jpg";
-},{}],"src/textures/gold.jpg":[function(require,module,exports) {
-module.exports = "/gold.87756c33.jpg";
-},{}],"src/textures/brick445x445.jpg":[function(require,module,exports) {
-module.exports = "/brick445x445.e89a5740.jpg";
-},{}],"src/classes/graphics/ImageLoader.js":[function(require,module,exports) {
+},{"../../utils/Math":"src/classes/utils/Math.js","../raycast/Ray":"src/classes/renderers/raycast/Ray.js"}],"src/classes/renderers/raycast/Plane.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var Plane = /*#__PURE__*/function () {
+  function Plane(handler, texture) {
+    _classCallCheck(this, Plane);
+
+    this.__handler = handler;
+    this.__camera = this.__handler.getCamera();
+    console.log({
+      camera: this.__camera
+    });
+    this.__width = this.__camera.width;
+    this.__height = this.__camera.height;
+    this.__texture = texture;
+    this.__fov = this.__camera.fov / 2;
+  }
+
+  _createClass(Plane, [{
+    key: "draw",
+    value: function draw(ctx) {
+      var xOffset = this.__camera.position.x;
+      var yOffset = this.__camera.position.y;
+
+      var farX1 = this.__camera.position.x + Math.cos(this.__camera.angle - this.__fov) * this.__camera.projectionDistance;
+
+      var farY1 = this.__camera.position.y + Math.sin(this.__camera.angle - this.__fov) * this.__camera.projectionDistance;
+
+      var nearX1 = this.__camera.position.x + Math.cos(this.__camera.angle - this.__fov) * 0.01;
+      var nearY1 = this.__camera.position.y + Math.sin(this.__camera.angle - this.__fov) * 0.01;
+    }
+  }]);
+
+  return Plane;
+}();
+
+exports.default = Plane;
+},{}],"src/classes/renderers/raycast/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _Math = require("../../utils/Math");
+
+var _Ray = _interopRequireDefault(require("../raycast/Ray"));
+
+var _Map = _interopRequireDefault(require("../../Map"));
+
+var _Plane = _interopRequireDefault(require("./Plane"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { _defineProperty(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var RayCast = /*#__PURE__*/function () {
+  function RayCast(handler, ctx, map, scale) {
+    var configs = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
+
+    _classCallCheck(this, RayCast);
+
+    this.__handler = handler;
+    this.__camera = this.__handler.getCamera();
+    this.__width = this.__handler.getGame().width;
+    this.__height = this.__handler.getGame().height;
+    this.__ctx = ctx;
+    this.__configs = configs;
+    this.entities = [];
+    this.__rays = [];
+    this.__scale = scale;
+    this.__siteDistance = this.__width * 0.5 / Math.tan((0, _Math.toRadians)(30));
+    this.__map = map;
+    this.__wallShade = 0.7;
+    this.__floorPlane = new _Plane.default(this.__handler, this.__map.floorMap);
+  }
+
+  _createClass(RayCast, [{
+    key: "changeConfig",
+    value: function changeConfig(configs) {
+      this.__configs = _objectSpread(_objectSpread({}, this.__configs), configs);
+    }
+  }, {
+    key: "castAllRays",
+    value: function castAllRays() {
+      this.__rays = [];
+
+      for (var i = 0; i < this.__width; i++) {
+        var rayAngle = this.__camera.angle + Math.atan((i - this.__width * 0.5) / this.__camera.projectionDistance);
+        var ray = new _Ray.default(this.__width, this.__height, this.__camera.position, rayAngle, this.__map);
+        ray.cast();
+
+        this.__rays.push(ray);
+      }
+    }
+  }, {
+    key: "render",
+    value: function render(ctx) {
+      //var gradient = ctx.createLinearGradient(0, 0, 0, this.__height)
+      // Add three color stops
+      var multiplier = this.__camera.tilt / 10;
+      var rgbval = 180 - multiplier;
+      var rgb = "rgb(".concat(rgbval, ",").concat(rgbval, ",").concat(rgbval, ")"); // gradient.addColorStop(0, rgb)
+      // gradient.addColorStop(rangeMap(this.__camera.tilt, -200, 200, 1, 0), "#222222")
+      // gradient.addColorStop(1, rgb)
+      // // Set the fill style and draw a rectangle
+      // ctx.fillStyle = gradient
+
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, this.__width, this.__height);
+
+      for (var column = 0; column < this.__rays.length; column++) {
+        var ray = this.__rays[column];
+        var rayDistance = ray.distance * Math.cos(ray.angle - this.__camera.angle);
+        var wallHeight = _Map.default.TILE_SIZE / rayDistance * this.__camera.projectionDistance; //console.log(rayDistance);
+
+        var wallPosition = this.__height * 0.5 - wallHeight * 0.5;
+        wallPosition -= rayDistance * this.__camera.tilt / rayDistance;
+        var fillShade = (0, _Math.rangeMap)(Math.min(rayDistance, this.__siteDistance), 0, this.__siteDistance, 0, 1);
+        ray.texture.drawImageSlice(ctx, ray.textureOffset, column, wallPosition, 1, wallHeight);
+        if (!ray.verticalHit) fillShade += 0.2;
+        ctx.globalAlpha = fillShade;
+        ctx.fillStyle = "black";
+        ctx.fillRect(column, wallPosition, 1, wallHeight);
+        ctx.globalAlpha = 1;
+      }
+    }
+  }, {
+    key: "addEntity",
+    value: function addEntity(entity) {
+      entity.color = entity.color || "grey";
+      this.entities.push(entity);
+    }
+  }]);
+
+  return RayCast;
+}();
+
+exports.default = RayCast;
+},{"../../utils/Math":"src/classes/utils/Math.js","../raycast/Ray":"src/classes/renderers/raycast/Ray.js","../../Map":"src/classes/Map.js","./Plane":"src/classes/renderers/raycast/Plane.js"}],"src/classes/states/GameState.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _entities = _interopRequireDefault(require("../entities"));
+
+var _Player = require("../entities/Player");
+
+var _Camera = _interopRequireDefault(require("../renderers/Camera"));
+
+var _FPS = _interopRequireDefault(require("../controller/FPS"));
+
+var _d = _interopRequireDefault(require("../renderers/2d"));
+
+var _raycast = _interopRequireDefault(require("../renderers/raycast"));
+
+var _Map = _interopRequireDefault(require("../Map"));
+
+var _Math = require("../utils/Math");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var GameState = /*#__PURE__*/function () {
+  function GameState(handler) {
+    _classCallCheck(this, GameState);
+
+    this.__handler = handler;
+  }
+
+  _createClass(GameState, [{
+    key: "deconstruct",
+    value: function deconstruct() {
+      this.__controller.deconstruct();
+    }
+  }, {
+    key: "setup",
+    value: function setup() {
+      var _this = this;
+
+      this.__scale = 0.3;
+      this.__fov = (0, _Math.toRadians)(80);
+      this.__map = new _Map.default(this.__handler.getLevel());
+
+      var player = this.__map.getEntities().player;
+
+      this.__player = new _Player.Player(this.__handler, player.position.x * _Map.default.TILE_SIZE, player.position.y * _Map.default.TILE_SIZE, _Map.default.TILE_SIZE * 0.2, _Map.default.TILE_SIZE * 0.5);
+      this.__camera = new _Camera.default(0, 0, this.__handler.getGame().width, this.__handler.getGame().height, _Map.default.TILE_SIZE * 0.5, this.__fov, 0);
+
+      this.__handler.setCamera(this.__camera);
+
+      this.__controller = new _FPS.default(this.__handler.getGame().canvas.getCanvas());
+      var renderConfigs = {
+        stroke: "2px",
+        strokeColor: "black"
+      };
+
+      this.__controller.attachEntity(this.__player);
+
+      this.__minimapRenderer = new _d.default(this.__handler, this.__ctx, this.__map, this.__scale, renderConfigs);
+      this.__raycastRenderer = new _raycast.default(this.__handler, this.__ctx, this.__map, this.__scale, renderConfigs);
+
+      this.__map.grid.forEach(function (columns, rowIndex) {
+        columns.map(function (wall, columnIndex) {
+          if (wall == 1) {
+            var entity = new _entities.default(_this.__handler, columnIndex * _Map.default.TILE_SIZE, rowIndex * _Map.default.TILE_SIZE, _Map.default.TILE_SIZE, _Map.default.TILE_SIZE, 0, 0, "blue");
+
+            _this.__minimapRenderer.addEntity(entity);
+
+            _this.__raycastRenderer.addEntity(entity);
+          }
+        });
+      });
+
+      this.__map.getEntities().enemies.forEach(function (enemy) {
+        var entity = new _entities.default(_this.__handler, enemy.position.x * _Map.default.TILE_SIZE, enemy.position.y * _Map.default.TILE_SIZE, _Map.default.TILE_SIZE * 0.5, _Map.default.TILE_SIZE * 0.5, 0, 0, "red");
+
+        _this.__minimapRenderer.addEntity(entity);
+
+        _this.__raycastRenderer.addEntity(entity);
+      });
+
+      this.__camera.followEntity(this.__player);
+    }
+  }, {
+    key: "update",
+    value: function update(dt) {
+      this.__player.update(dt, this.__map);
+
+      this.__camera.followEntity(this.__player);
+
+      this.__raycastRenderer.castAllRays();
+    }
+  }, {
+    key: "draw",
+    value: function draw(ctx) {
+      this.__raycastRenderer.render(ctx);
+
+      this.__minimapRenderer.render(ctx);
+
+      this.__map.__floorMap.drawImage(ctx, 0, 0, this.__handler.getGame().width, this.__handler.getGame().height, 0.5, 0, 0);
+    }
+  }, {
+    key: "map",
+    get: function get() {
+      return this.__map;
+    }
+  }, {
+    key: "camera",
+    get: function get() {
+      return this.__camera;
+    }
+  }]);
+
+  return GameState;
+}();
+
+exports.default = GameState;
+},{"../entities":"src/classes/entities/index.js","../entities/Player":"src/classes/entities/Player.js","../renderers/Camera":"src/classes/renderers/Camera.js","../controller/FPS":"src/classes/controller/FPS.js","../renderers/2d":"src/classes/renderers/2d/index.js","../renderers/raycast":"src/classes/renderers/raycast/index.js","../Map":"src/classes/Map.js","../utils/Math":"src/classes/utils/Math.js"}],"src/classes/graphics/ImageLoader.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -3225,12 +3533,12 @@ var ImageLoader = /*#__PURE__*/function () {
                 return new Promise(function (resolve, reject) {
                   var image = new Image();
                   image.crossOrigin = "Anonymous";
+                  var canvas = document.createElement("canvas");
+                  var ctx = canvas.getContext("2d");
 
                   image.onload = function () {
-                    var canvas = document.createElement("canvas");
                     canvas.width = image.width;
                     canvas.height = image.height;
-                    var ctx = canvas.getContext("2d");
                     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
                     resolve(canvas);
                   };
@@ -3291,251 +3599,7 @@ var ImageLoader = /*#__PURE__*/function () {
 }();
 
 exports.default = ImageLoader;
-},{}],"src/classes/renderers/raycast/index.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _Math = require("../../utils/Math");
-
-var _Ray = _interopRequireDefault(require("../raycast/Ray"));
-
-var _Map = _interopRequireDefault(require("../../Map"));
-
-var _Texture = _interopRequireDefault(require("./Texture"));
-
-var _checkerboard = _interopRequireDefault(require("../../../textures/checkerboard.jpg"));
-
-var _gold = _interopRequireDefault(require("../../../textures/gold.jpg"));
-
-var _brick445x = _interopRequireDefault(require("../../../textures/brick445x445.jpg"));
-
-var _ImageLoader = _interopRequireDefault(require("../../graphics/ImageLoader"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { _defineProperty(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-var RayCast = /*#__PURE__*/function () {
-  function RayCast(width, height, ctx, map, scale) {
-    var configs = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : {};
-
-    _classCallCheck(this, RayCast);
-
-    this.__width = width;
-    this.__height = height;
-    this.__ctx = ctx;
-    this.__configs = configs;
-    this.entities = [];
-    this.__rays = [];
-    this.__scale = scale;
-    this.__map = map;
-    this.__wallShade = 0.7;
-    this.__texture = this.__map.getWallTextureAt(0, 0);
-  }
-
-  _createClass(RayCast, [{
-    key: "attachCamera",
-    value: function attachCamera(camera) {
-      this.__camera = camera;
-    }
-  }, {
-    key: "changeConfig",
-    value: function changeConfig(configs) {
-      this.__configs = _objectSpread(_objectSpread({}, this.__configs), configs);
-    }
-  }, {
-    key: "castAllRays",
-    value: function castAllRays() {
-      this.__rays = [];
-
-      for (var i = 0; i < this.__width; i++) {
-        var rayAngle = this.__camera.angle + Math.atan((i - this.__width * 0.5) / this.__camera.projectionDistance);
-        var ray = new _Ray.default(this.__width, this.__height, this.__camera.position, rayAngle, this.__map);
-        ray.cast();
-
-        this.__rays.push(ray);
-      }
-    }
-  }, {
-    key: "render",
-    value: function render(ctx) {
-      var gradient = ctx.createLinearGradient(0, 0, 0, this.__height); // Add three color stops
-
-      var multiplier = this.__camera.tilt / 10;
-      var rgbval = 180 - multiplier;
-      var rgb = "rgb(".concat(rgbval, ",").concat(rgbval, ",").concat(rgbval, ")");
-      gradient.addColorStop(0, rgb);
-      gradient.addColorStop((0, _Math.rangeMap)(this.__camera.tilt, -200, 200, 1, 0), "#222222");
-      gradient.addColorStop(1, rgb); // Set the fill style and draw a rectangle
-
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, this.__width, this.__height);
-
-      for (var column = 0; column < this.__rays.length; column++) {
-        var ray = this.__rays[column];
-        var rayDistance = ray.distance * Math.cos(ray.angle - this.__camera.angle);
-        var wallHeight = _Map.default.TILE_SIZE / rayDistance * this.__camera.projectionDistance; //console.log(rayDistance);
-
-        var wallPosition = this.__height * 0.5 - wallHeight * 0.5;
-        wallPosition -= rayDistance * this.__camera.tilt / rayDistance;
-        ray.texture.drawImageSlice(ctx, ray.textureOffset, column, wallPosition, 1, wallHeight);
-        var fillShade = (0, _Math.rangeMap)(rayDistance, 0, this.__width, 0, this.__wallShade);
-        if (!ray.verticalHit) fillShade += 0.5;
-        ctx.globalAlpha = fillShade;
-        ctx.fillStyle = "rgb(0,0,0)";
-        ctx.fillRect(column, wallPosition, 1, wallHeight);
-        ctx.globalAlpha = 1;
-      }
-    }
-  }, {
-    key: "addEntity",
-    value: function addEntity(entity) {
-      entity.color = entity.color || "grey";
-      this.entities.push(entity);
-    }
-  }]);
-
-  return RayCast;
-}();
-
-exports.default = RayCast;
-},{"../../utils/Math":"src/classes/utils/Math.js","../raycast/Ray":"src/classes/renderers/raycast/Ray.js","../../Map":"src/classes/Map.js","./Texture":"src/classes/renderers/raycast/Texture.js","../../../textures/checkerboard.jpg":"src/textures/checkerboard.jpg","../../../textures/gold.jpg":"src/textures/gold.jpg","../../../textures/brick445x445.jpg":"src/textures/brick445x445.jpg","../../graphics/ImageLoader":"src/classes/graphics/ImageLoader.js"}],"src/classes/states/GameState.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _entities = _interopRequireDefault(require("../entities"));
-
-var _Player = require("../entities/Player");
-
-var _Camera = _interopRequireDefault(require("../renderers/Camera"));
-
-var _FPS = _interopRequireDefault(require("../controller/FPS"));
-
-var _d = _interopRequireDefault(require("../renderers/2d"));
-
-var _raycast = _interopRequireDefault(require("../renderers/raycast"));
-
-var _Map = _interopRequireDefault(require("../Map"));
-
-var _Math = require("../utils/Math");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-var GameState = /*#__PURE__*/function () {
-  function GameState(handler) {
-    _classCallCheck(this, GameState);
-
-    this.__handler = handler;
-  }
-
-  _createClass(GameState, [{
-    key: "deconstruct",
-    value: function deconstruct() {
-      this.__controller.deconstruct();
-    }
-  }, {
-    key: "setup",
-    value: function setup() {
-      var _this = this;
-
-      this.__scale = 0.3;
-      this.__fov = (0, _Math.toRadians)(80);
-      this.__map = new _Map.default(this.__handler.getLevel());
-
-      var player = this.__map.getEntities().player;
-
-      this.__player = new _Player.Player(this.__handler, player.position.x * _Map.default.TILE_SIZE, player.position.y * _Map.default.TILE_SIZE, _Map.default.TILE_SIZE * 0.2, _Map.default.TILE_SIZE * 0.5);
-      this.__camera = new _Camera.default(0, 0, this.__handler.getGame().width, this.__handler.getGame().height, _Map.default.TILE_SIZE * 0.5, this.__fov, 0);
-      this.__controller = new _FPS.default(this.__handler.getGame().canvas.getCanvas());
-      var renderConfigs = {
-        stroke: "2px",
-        strokeColor: "black"
-      };
-
-      this.__controller.attachEntity(this.__player);
-
-      this.__minimapRenderer = new _d.default(this.__handler.getGame().width, this.__handler.getGame().height, this.__ctx, this.__map, this.__scale, renderConfigs);
-
-      this.__minimapRenderer.attachCamera(this.__camera);
-
-      this.__raycastRenderer = new _raycast.default(this.__handler.getGame().width, this.__handler.getGame().height, this.__ctx, this.__map, this.__scale, renderConfigs);
-
-      this.__raycastRenderer.attachCamera(this.__camera);
-
-      this.__map.grid.forEach(function (columns, rowIndex) {
-        columns.map(function (wall, columnIndex) {
-          if (wall == 1) {
-            var entity = new _entities.default(_this.__handler, columnIndex * _Map.default.TILE_SIZE, rowIndex * _Map.default.TILE_SIZE, _Map.default.TILE_SIZE, _Map.default.TILE_SIZE, 0, 0, "blue");
-
-            _this.__minimapRenderer.addEntity(entity);
-
-            _this.__raycastRenderer.addEntity(entity);
-          }
-        });
-      });
-
-      this.__map.getEntities().enemies.forEach(function (enemy) {
-        var entity = new _entities.default(_this.__handler, enemy.position.x * _Map.default.TILE_SIZE, enemy.position.y * _Map.default.TILE_SIZE, _Map.default.TILE_SIZE * 0.5, _Map.default.TILE_SIZE * 0.5, 0, 0, "red");
-
-        _this.__minimapRenderer.addEntity(entity);
-
-        _this.__raycastRenderer.addEntity(entity);
-      });
-
-      this.__camera.followEntity(this.__player);
-    }
-  }, {
-    key: "update",
-    value: function update(dt) {
-      this.__player.update(dt, this.__map);
-
-      this.__camera.followEntity(this.__player);
-
-      this.__raycastRenderer.castAllRays();
-    }
-  }, {
-    key: "draw",
-    value: function draw(ctx) {
-      this.__raycastRenderer.render(ctx);
-
-      this.__minimapRenderer.render(ctx);
-    }
-  }, {
-    key: "map",
-    get: function get() {
-      return this.__map;
-    }
-  }]);
-
-  return GameState;
-}();
-
-exports.default = GameState;
-},{"../entities":"src/classes/entities/index.js","../entities/Player":"src/classes/entities/Player.js","../renderers/Camera":"src/classes/renderers/Camera.js","../controller/FPS":"src/classes/controller/FPS.js","../renderers/2d":"src/classes/renderers/2d/index.js","../renderers/raycast":"src/classes/renderers/raycast/index.js","../Map":"src/classes/Map.js","../utils/Math":"src/classes/utils/Math.js"}],"src/classes/utils/AssetLoader.js":[function(require,module,exports) {
+},{}],"src/classes/utils/AssetLoader.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -3698,9 +3762,15 @@ var Level = /*#__PURE__*/function () {
 
               case 15:
                 this.__textureMap.textures = _context.sent;
+                this.updateStatus("stitching floor textures");
+                _context.next = 19;
+                return this.stitchFloorTextures();
+
+              case 19:
+                this.__textureMap.floor = _context.sent;
                 this.loadComplete();
 
-              case 17:
+              case 21:
               case "end":
                 return _context.stop();
             }
@@ -3715,53 +3785,99 @@ var Level = /*#__PURE__*/function () {
       return load;
     }()
   }, {
-    key: "loadTextures",
+    key: "stitchFloorTextures",
     value: function () {
-      var _loadTextures = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee4() {
+      var _stitchFloorTextures = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2() {
         var _this = this;
 
-        var textures;
-        return _regeneratorRuntime().wrap(function _callee4$(_context4) {
+        var floorCanvas, floorContext;
+        return _regeneratorRuntime().wrap(function _callee2$(_context2) {
           while (1) {
-            switch (_context4.prev = _context4.next) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                this.__floorMap = this.__textureMap.floor.map(function (row) {
+                  return row.split("").map(function (column) {
+                    return parseInt(column);
+                  });
+                });
+                floorCanvas = document.createElement("canvas");
+                floorCanvas.width = _Map.default.TILE_SIZE * this.__structures["floor"][0].length;
+                floorCanvas.height = _Map.default.TILE_SIZE * this.__structures["floor"].length;
+                floorContext = floorCanvas.getContext("2d");
+
+                this.__floorMap.forEach(function (row, rowIndex) {
+                  row.forEach(function (tile, columnIndex) {
+                    if (tile == 0) return;
+                    var texture = _this.__textureMap.textures.floor[tile];
+                    texture.drawImage(floorContext, columnIndex * _Map.default.TILE_SIZE, rowIndex * _Map.default.TILE_SIZE, _Map.default.TILE_SIZE, _Map.default.TILE_SIZE);
+                  });
+                });
+
+                return _context2.abrupt("return", new _Texture.default(floorCanvas));
+
+              case 7:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2, this);
+      }));
+
+      function stitchFloorTextures() {
+        return _stitchFloorTextures.apply(this, arguments);
+      }
+
+      return stitchFloorTextures;
+    }()
+  }, {
+    key: "loadTextures",
+    value: function () {
+      var _loadTextures = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee5() {
+        var _this2 = this;
+
+        var textures;
+        return _regeneratorRuntime().wrap(function _callee5$(_context5) {
+          while (1) {
+            switch (_context5.prev = _context5.next) {
               case 0:
                 textures = this.__textureMap.textures;
-                return _context4.abrupt("return", new Promise(function (resolve) {
+                return _context5.abrupt("return", new Promise(function (resolve) {
                   var loadedTextures = _objectSpread({}, textures);
 
                   Object.keys(textures).map( /*#__PURE__*/function () {
-                    var _ref = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3(textureType) {
-                      return _regeneratorRuntime().wrap(function _callee3$(_context3) {
+                    var _ref = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee4(textureType) {
+                      return _regeneratorRuntime().wrap(function _callee4$(_context4) {
                         while (1) {
-                          switch (_context3.prev = _context3.next) {
+                          switch (_context4.prev = _context4.next) {
                             case 0:
-                              _context3.next = 2;
+                              _context4.next = 2;
                               return Promise.all(Object.keys(textures[textureType]).map( /*#__PURE__*/function () {
-                                var _ref2 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(textureKey) {
-                                  var imagename, image, texture;
-                                  return _regeneratorRuntime().wrap(function _callee2$(_context2) {
+                                var _ref2 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3(textureKey) {
+                                  var imagename, imagePath, image, texture;
+                                  return _regeneratorRuntime().wrap(function _callee3$(_context3) {
                                     while (1) {
-                                      switch (_context2.prev = _context2.next) {
+                                      switch (_context3.prev = _context3.next) {
                                         case 0:
                                           imagename = textures[textureType][textureKey];
 
-                                          _this.updateStatus("loading texture ".concat(_this.__path, "/").concat(textureType, "/").concat(imagename));
+                                          _this2.updateStatus("loading texture ".concat(_this2.__path, "/").concat(textureType, "/").concat(imagename));
 
-                                          _context2.next = 4;
-                                          return _ImageLoader.default.loadImage("".concat(_this.__path, "/textures/").concat(textureType, "/").concat(imagename));
+                                          imagePath = "".concat(_this2.__path, "/textures/").concat(textureType, "/").concat(imagename);
+                                          _context3.next = 5;
+                                          return _ImageLoader.default.loadImage(imagePath);
 
-                                        case 4:
-                                          image = _context2.sent;
+                                        case 5:
+                                          image = _context3.sent;
                                           texture = new _Texture.default(image);
                                           loadedTextures[textureType][textureKey] = texture;
-                                          return _context2.abrupt("return", texture);
+                                          return _context3.abrupt("return", texture);
 
-                                        case 8:
+                                        case 9:
                                         case "end":
-                                          return _context2.stop();
+                                          return _context3.stop();
                                       }
                                     }
-                                  }, _callee2);
+                                  }, _callee3);
                                 }));
 
                                 return function (_x2) {
@@ -3770,14 +3886,16 @@ var Level = /*#__PURE__*/function () {
                               }()));
 
                             case 2:
-                              resolve(loadedTextures);
+                              setTimeout(function () {
+                                resolve(loadedTextures);
+                              }, 500);
 
                             case 3:
                             case "end":
-                              return _context3.stop();
+                              return _context4.stop();
                           }
                         }
-                      }, _callee3);
+                      }, _callee4);
                     }));
 
                     return function (_x) {
@@ -3788,10 +3906,10 @@ var Level = /*#__PURE__*/function () {
 
               case 2:
               case "end":
-                return _context4.stop();
+                return _context5.stop();
             }
           }
-        }, _callee4, this);
+        }, _callee5, this);
       }));
 
       function loadTextures() {
@@ -3834,41 +3952,13 @@ var Level = /*#__PURE__*/function () {
   }], [{
     key: "getLevelStructure",
     value: function () {
-      var _getLevelStructure = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee5(path) {
-        return _regeneratorRuntime().wrap(function _callee5$(_context5) {
-          while (1) {
-            switch (_context5.prev = _context5.next) {
-              case 0:
-                _context5.next = 2;
-                return _AssetLoader.default.loadJson("".concat(path, "/maps/structure.json"));
-
-              case 2:
-                return _context5.abrupt("return", _context5.sent);
-
-              case 3:
-              case "end":
-                return _context5.stop();
-            }
-          }
-        }, _callee5);
-      }));
-
-      function getLevelStructure(_x3) {
-        return _getLevelStructure.apply(this, arguments);
-      }
-
-      return getLevelStructure;
-    }()
-  }, {
-    key: "getTextureMap",
-    value: function () {
-      var _getTextureMap = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee6(path) {
+      var _getLevelStructure = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee6(path) {
         return _regeneratorRuntime().wrap(function _callee6$(_context6) {
           while (1) {
             switch (_context6.prev = _context6.next) {
               case 0:
                 _context6.next = 2;
-                return _AssetLoader.default.loadJson("".concat(path, "/maps/textures.json"));
+                return _AssetLoader.default.loadJson("".concat(path, "/maps/structure.json"));
 
               case 2:
                 return _context6.abrupt("return", _context6.sent);
@@ -3881,22 +3971,22 @@ var Level = /*#__PURE__*/function () {
         }, _callee6);
       }));
 
-      function getTextureMap(_x4) {
-        return _getTextureMap.apply(this, arguments);
+      function getLevelStructure(_x3) {
+        return _getLevelStructure.apply(this, arguments);
       }
 
-      return getTextureMap;
+      return getLevelStructure;
     }()
   }, {
-    key: "getEntities",
+    key: "getTextureMap",
     value: function () {
-      var _getEntities = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee7(path) {
+      var _getTextureMap = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee7(path) {
         return _regeneratorRuntime().wrap(function _callee7$(_context7) {
           while (1) {
             switch (_context7.prev = _context7.next) {
               case 0:
                 _context7.next = 2;
-                return _AssetLoader.default.loadJson("".concat(path, "/maps/entities.json"));
+                return _AssetLoader.default.loadJson("".concat(path, "/maps/textures.json"));
 
               case 2:
                 return _context7.abrupt("return", _context7.sent);
@@ -3909,22 +3999,22 @@ var Level = /*#__PURE__*/function () {
         }, _callee7);
       }));
 
-      function getEntities(_x5) {
-        return _getEntities.apply(this, arguments);
+      function getTextureMap(_x4) {
+        return _getTextureMap.apply(this, arguments);
       }
 
-      return getEntities;
+      return getTextureMap;
     }()
   }, {
-    key: "getLevels",
+    key: "getEntities",
     value: function () {
-      var _getLevels = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee8() {
+      var _getEntities = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee8(path) {
         return _regeneratorRuntime().wrap(function _callee8$(_context8) {
           while (1) {
             switch (_context8.prev = _context8.next) {
               case 0:
                 _context8.next = 2;
-                return _AssetLoader.default.loadJson(levelsJson);
+                return _AssetLoader.default.loadJson("".concat(path, "/maps/entities.json"));
 
               case 2:
                 return _context8.abrupt("return", _context8.sent);
@@ -3935,6 +4025,34 @@ var Level = /*#__PURE__*/function () {
             }
           }
         }, _callee8);
+      }));
+
+      function getEntities(_x5) {
+        return _getEntities.apply(this, arguments);
+      }
+
+      return getEntities;
+    }()
+  }, {
+    key: "getLevels",
+    value: function () {
+      var _getLevels = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee9() {
+        return _regeneratorRuntime().wrap(function _callee9$(_context9) {
+          while (1) {
+            switch (_context9.prev = _context9.next) {
+              case 0:
+                _context9.next = 2;
+                return _AssetLoader.default.loadJson(levelsJson);
+
+              case 2:
+                return _context9.abrupt("return", _context9.sent);
+
+              case 3:
+              case "end":
+                return _context9.stop();
+            }
+          }
+        }, _callee9);
       }));
 
       function getLevels() {
@@ -4546,7 +4664,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50332" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54505" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

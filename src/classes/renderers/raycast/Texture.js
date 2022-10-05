@@ -7,17 +7,25 @@ export default class Texture {
     const ctx = canvas.getContext("2d")
     this.__imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   }
-  drawImage(ctx, x, y, w, h) {
+  drawImage(ctx, x, y, w, h, radians = 0, skewX = 0, skewY = 0) {
+    ctx.save()
+    ctx.translate(-w / 2, -h / 2)
+    ctx.rotate(radians)
     ctx.drawImage(this.__canvas, x, y, w, h)
+    ctx.translate(w / 2, h / 2)
+    ctx.restore()
   }
+
   drawImageSlice(ctx, textureOffset, x, y, w, h) {
     var sliceWidth = this.__width / Map.TILE_SIZE
     const sliceX = Math.floor(sliceWidth * textureOffset)
     ctx.drawImage(this.__canvas, sliceX, 0, 1, this.__height, x, y, w, h)
   }
+
   drawPixel(ctx, px, py, x, y, w) {
     ctx.drawImage(this.__canvas, px, py, 1, w, x, y, 1, w)
   }
+
   putImageData(ctx, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight) {
     var data = this.__imageData.data
     var height = this.__canvas.height
