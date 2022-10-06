@@ -1,12 +1,12 @@
 import { toRadians, Vector } from "../utils/Math"
 export default class Entity {
-  constructor(handler, x, y, width, height, speed = 0, angle = 0, color = "green") {
+  constructor(handler, x, y, width, height, speed = 0, angle = 0, sprite) {
     this.__handler = handler
     this.__position = new Vector(x, y)
     this.__width = width
     this.__height = height
     this.__angle = angle
-    this.__color = color
+    this.__sprite = sprite
     this.__tilt = 0
     this.__speed = speed
     this.__direction = {
@@ -38,6 +38,9 @@ export default class Entity {
       map
     )
   }
+  get sprite() {
+    return this.__sprite
+  }
   get position() {
     return this.__position
   }
@@ -61,10 +64,10 @@ export default class Entity {
   }
   set angle(val) {
     this.__angle = val
+    if (this.__angle < -Math.PI) this.__angle += Math.PI * 2
+    if (this.__angle > Math.PI) this.__angle -= Math.PI * 2
   }
-  get color() {
-    return this.__color
-  }
+
   set tilt(val) {
     this.__tilt = val
     this.__tilt = this.__tilt
@@ -79,8 +82,5 @@ export default class Entity {
   }
   set height(val) {
     this.__height = height
-  }
-  set color(val) {
-    this.__color = val
   }
 }

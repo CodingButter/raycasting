@@ -14,15 +14,6 @@
         "x": 10,
         "y": 10
       }
-    },
-    {
-      "type": "skeleton",
-      "level": 12,
-      "health": 100,
-      "position": {
-        "x": 20,
-        "y": 4
-      }
     }
   ]
 }

@@ -30,6 +30,7 @@ export default class LevelSelectState {
           this.__handler.setLevel(lvl)
           lvl.on("status_change", console.log)
           lvl.on("load_complete", () => {
+            this.__controller.deconstruct()
             this.__handler.getGame().setState("game")
           })
         }

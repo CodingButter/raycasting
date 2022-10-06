@@ -2213,6 +2213,7 @@ exports.normalizeAngle = normalizeAngle;
 exports.rangeMap = rangeMap;
 exports.toDegrees = toDegrees;
 exports.toRadians = toRadians;
+exports.vectorAngle = vectorAngle;
 exports.vectorDistance = vectorDistance;
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -2235,10 +2236,16 @@ function vectorDistance(vector1, vector2) {
   return Math.sqrt(distX * distX + distY * distY);
 }
 
-function normalizeAngle(angle) {
-  angle = angle % (2 * Math.PI);
-  if (angle < 0) angle += 2 * Math.PI;
-  return angle;
+function vectorAngle(vector1, vector2) {
+  var distX = vector1.x - vector2.x;
+  var distY = vector1.y - vector2.y;
+  return Math.atan2(distY, distX);
+}
+
+function normalizeAngle(theta) {
+  return (theta + Math.PI * 2) % (Math.PI * 2); // angle = angle % (2 * Math.PI)
+  // if (angle < 0) angle += 2 * Math.PI
+  // return angle
 }
 
 function rangeMap(n, start1, stop1, start2, stop2) {
@@ -2328,7 +2335,7 @@ var Entity = /*#__PURE__*/function () {
   function Entity(handler, x, y, width, height) {
     var speed = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 0;
     var angle = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 0;
-    var color = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : "green";
+    var sprite = arguments.length > 7 ? arguments[7] : undefined;
 
     _classCallCheck(this, Entity);
 
@@ -2337,7 +2344,7 @@ var Entity = /*#__PURE__*/function () {
     this.__width = width;
     this.__height = height;
     this.__angle = angle;
-    this.__color = color;
+    this.__sprite = sprite;
     this.__tilt = 0;
     this.__speed = speed;
     this.__direction = {
@@ -2371,6 +2378,11 @@ var Entity = /*#__PURE__*/function () {
       this.move(Math.cos(this.__angle + (0, _Math.toRadians)(90)) * this.__speed * this.direction.strafe * dt || 0, Math.sin(this.__angle + (0, _Math.toRadians)(90)) * this.__speed * this.direction.strafe * dt || 0, map);
     }
   }, {
+    key: "sprite",
+    get: function get() {
+      return this.__sprite;
+    }
+  }, {
     key: "position",
     get: function get() {
       return this.__position;
@@ -2401,6 +2413,8 @@ var Entity = /*#__PURE__*/function () {
     },
     set: function set(val) {
       this.__angle = val;
+      if (this.__angle < -Math.PI) this.__angle += Math.PI * 2;
+      if (this.__angle > Math.PI) this.__angle -= Math.PI * 2;
     }
   }, {
     key: "tilt",
@@ -2420,14 +2434,6 @@ var Entity = /*#__PURE__*/function () {
     },
     set: function set(val) {
       this.__direction = val;
-    }
-  }, {
-    key: "color",
-    get: function get() {
-      return this.__color;
-    },
-    set: function set(val) {
-      this.__color = val;
     }
   }]);
 
@@ -2474,10 +2480,10 @@ var Player = /*#__PURE__*/function (_Entity) {
 
   var _super = _createSuper(Player);
 
-  function Player(handler, x, y, width, height) {
+  function Player(handler, x, y, width, height, sprite) {
     _classCallCheck(this, Player);
 
-    return _super.call(this, handler, x, y, width, height, 100, 0, "blue");
+    return _super.call(this, handler, x, y, width, height, 100, 0, sprite);
   }
 
   return _createClass(Player);
@@ -2690,7 +2696,7 @@ var FPS = /*#__PURE__*/function () {
 }();
 
 exports.default = FPS;
-},{"../entities":"src/classes/entities/index.js"}],"src/classes/renderers/raycast/Texture.js":[function(require,module,exports) {
+},{"../entities":"src/classes/entities/index.js"}],"src/classes/graphics/Texture.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -2698,7 +2704,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _Map = _interopRequireDefault(require("../../Map"));
+var _Map = _interopRequireDefault(require("../Map"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -2722,15 +2728,7 @@ var Texture = /*#__PURE__*/function () {
   _createClass(Texture, [{
     key: "drawImage",
     value: function drawImage(ctx, x, y, w, h) {
-      var radians = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 0;
-      var skewX = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 0;
-      var skewY = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : 0;
-      ctx.save();
-      ctx.translate(-w / 2, -h / 2);
-      ctx.rotate(radians);
       ctx.drawImage(this.__canvas, x, y, w, h);
-      ctx.translate(w / 2, h / 2);
-      ctx.restore();
     }
   }, {
     key: "drawImageSlice",
@@ -2740,9 +2738,27 @@ var Texture = /*#__PURE__*/function () {
       ctx.drawImage(this.__canvas, sliceX, 0, 1, this.__height, x, y, w, h);
     }
   }, {
+    key: "drawImageRotatedSlice",
+    value: function drawImageRotatedSlice(ctx, x, y, xOffset, yOffset, radians, distance, sliceHeight) {
+      var tmpCanvas = document.createElement("canvas");
+      tmpCanvas.width = 1;
+      tmpCanvas.height = sliceHeight;
+      var tmpCtx = tmpCanvas.getContext("2d");
+      tmpCtx.save();
+      tmpCtx.rotate(-radians);
+      tmpCtx.drawImage(this.__canvas, 0, 0, 1, distance, xOffset, yOffset, 1, distance);
+      tmpCtx.restore();
+      ctx.drawImage(tmpCanvas, x, y, 1, sliceHeight);
+    }
+  }, {
     key: "drawPixel",
     value: function drawPixel(ctx, px, py, x, y, w) {
       ctx.drawImage(this.__canvas, px, py, 1, w, x, y, 1, w);
+    }
+  }, {
+    key: "getImage",
+    value: function getImage() {
+      return this.__canvas;
     }
   }, {
     key: "putImageData",
@@ -2771,7 +2787,7 @@ var Texture = /*#__PURE__*/function () {
 }();
 
 exports.default = Texture;
-},{"../../Map":"src/classes/Map.js"}],"src/classes/Map.js":[function(require,module,exports) {
+},{"../Map":"src/classes/Map.js"}],"src/classes/graphics/Sprite.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -2779,7 +2795,103 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _Texture = _interopRequireDefault(require("./renderers/raycast/Texture"));
+var _Map = _interopRequireDefault(require("../Map"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var Sprite = /*#__PURE__*/function () {
+  function Sprite(texture) {
+    _classCallCheck(this, Sprite);
+
+    this.__texture = texture;
+  }
+
+  _createClass(Sprite, [{
+    key: "drawImage",
+    value: function drawImage(ctx, x, y, w, h) {
+      this.__texture.drawImage(ctx, x, y, w, h);
+    }
+  }, {
+    key: "drawImageSlice",
+    value: function drawImageSlice(ctx, textureOffset, x, y, w, h) {
+      this.__texture.drawImageSlice(ctx, textureOffset, x, y, w, h);
+    }
+  }]);
+
+  return Sprite;
+}();
+
+exports.default = Sprite;
+},{"../Map":"src/classes/Map.js"}],"src/classes/entities/Enemies/Enemy.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Enemy = void 0;
+
+var _index = _interopRequireDefault(require("../index"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var Enemy = /*#__PURE__*/function (_Entity) {
+  _inherits(Enemy, _Entity);
+
+  var _super = _createSuper(Enemy);
+
+  function Enemy(handler, x, y, width, height, sprite) {
+    _classCallCheck(this, Enemy);
+
+    return _super.call(this, handler, x, y, width, height, 100, 0, sprite);
+  }
+
+  return _createClass(Enemy);
+}(_index.default);
+
+exports.Enemy = Enemy;
+},{"../index":"src/classes/entities/index.js"}],"src/classes/Map.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _Texture = _interopRequireDefault(require("./graphics/Texture"));
+
+var _Sprite = _interopRequireDefault(require("./graphics/Sprite"));
+
+var _Player = require("./entities/Player");
+
+var _Enemy = require("./entities/Enemies/Enemy");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -2798,15 +2910,26 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 var TILE_SIZE = 32;
 
 var Map = /*#__PURE__*/function () {
-  function Map(level) {
+  function Map(handler) {
     var _this = this;
 
     _classCallCheck(this, Map);
 
+    this.__handler = handler;
+
+    var level = this.__handler.getLevel();
+
     var structures = level.getStructures();
     var textureMap = level.getTextureMap();
-    this.__entities = level.getEntities();
-    this.__textures = _objectSpread({}, textureMap.textures);
+    this.__textures = textureMap.textures;
+    var player = level.getEntities().player;
+    this.__player = new _Player.Player(this.__handler, player.position.x * Map.TILE_SIZE, player.position.y * Map.TILE_SIZE, Map.TILE_SIZE, Map.TILE_SIZE, new _Sprite.default(this.__textures.entities.player));
+    var enemies = level.getEntities().enemies.map(function (enemy) {
+      return new _Enemy.Enemy(_this.__handler, enemy.position.x * Map.TILE_SIZE, enemy.position.y * Map.TILE_SIZE, Map.TILE_SIZE, Map.TILE_SIZE, new _Sprite.default(_this.__textures.entities[enemy.type]));
+    });
+    this.__entities = {
+      enemies: enemies
+    };
     this.__wallMap = textureMap.walls.map(function (row) {
       return row.split("").map(function (column) {
         return parseInt(column);
@@ -2837,6 +2960,11 @@ var Map = /*#__PURE__*/function () {
     key: "getEntities",
     value: function getEntities() {
       return this.__entities;
+    }
+  }, {
+    key: "getPlayer",
+    value: function getPlayer() {
+      return this.__player;
     }
   }, {
     key: "getWallTextureAt",
@@ -2889,7 +3017,7 @@ var Map = /*#__PURE__*/function () {
 }();
 
 exports.default = Map;
-},{"./renderers/raycast/Texture":"src/classes/renderers/raycast/Texture.js"}],"src/classes/renderers/raycast/Ray.js":[function(require,module,exports) {
+},{"./graphics/Texture":"src/classes/graphics/Texture.js","./graphics/Sprite":"src/classes/graphics/Sprite.js","./entities/Player":"src/classes/entities/Player.js","./entities/Enemies/Enemy":"src/classes/entities/Enemies/Enemy.js"}],"src/classes/renderers/raycast/Ray.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -3110,6 +3238,8 @@ var _Math = require("../../utils/Math");
 
 var _Ray = _interopRequireDefault(require("../raycast/Ray"));
 
+var _Map = _interopRequireDefault(require("../../Map"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
@@ -3135,10 +3265,10 @@ var TwoD = /*#__PURE__*/function () {
     this.__scale = scale;
     this.__width = this.__handler.getGame().width;
     this.__height = this.__handler.getGame().height;
-    this.__camerasize = 10;
+    this.__camerasize = _Map.default.TILE_SIZE;
     this.__ctx = ctx;
     this.__configs = configs;
-    this.entities = [];
+    this.__entities = [];
     this.__rays = [];
     this.__map = map;
   }
@@ -3158,7 +3288,9 @@ var TwoD = /*#__PURE__*/function () {
         var ray = new _Ray.default(this.__width, this.__height, this.__camera.position, rayAngle, this.__map);
         ray.cast();
         ctx.strokeStyle = "white";
+        ctx.globalAlpha = 0.1;
         ray.drawRay(ctx, this.__scale);
+        ctx.globalAlpha = 1;
 
         this.__rays.push(ray);
 
@@ -3176,11 +3308,24 @@ var TwoD = /*#__PURE__*/function () {
       ctx.fillStyle = "black";
       ctx.fillRect(0, 0, this.__map.getWidth() * this.__scale, this.__map.getHeight() * this.__scale);
       ctx.strokeStyle = this.__configs.strokeStyle || "";
-      this.entities.forEach(function (entity) {
-        ctx.fillStyle = entity.color;
-        ctx.fillRect(entity.position.x * _this.__scale, entity.position.y * _this.__scale, entity.width * _this.__scale, entity.height * _this.__scale);
-        ctx.strokeRect(entity.position.x * _this.__scale, entity.position.y * _this.__scale, entity.width * _this.__scale, entity.height * _this.__scale);
+
+      this.__map.grid.forEach(function (columns, rowIndex) {
+        columns.map(function (wall, columnIndex) {
+          if (wall > 0) {
+            ctx.fillStyle = "blue";
+            ctx.fillRect(columnIndex * _Map.default.TILE_SIZE * _this.__scale, rowIndex * _Map.default.TILE_SIZE * _this.__scale, _Map.default.TILE_SIZE * _this.__scale, _Map.default.TILE_SIZE * _this.__scale);
+            ctx.strokeRect(columnIndex * _Map.default.TILE_SIZE * _this.__scale, rowIndex * _Map.default.TILE_SIZE * _this.__scale, _Map.default.TILE_SIZE * _this.__scale, _Map.default.TILE_SIZE * _this.__scale);
+          }
+        });
       });
+
+      this.__entities.forEach(function (entity) {
+        var position = new _Math.Vector(entity.position.x - entity.width / 2, entity.position.y - entity.height / 2);
+        ctx.fillStyle = entity.color;
+        ctx.fillRect(position.x * _this.__scale, position.y * _this.__scale, entity.width * _this.__scale, entity.height * _this.__scale);
+        ctx.strokeRect(position.x * _this.__scale, position.y * _this.__scale, entity.width * _this.__scale, entity.height * _this.__scale);
+      });
+
       ctx.fillStyle = "blue";
       ctx.beginPath();
       ctx.arc(this.__camera.position.x * this.__scale, this.__camera.position.y * this.__scale, this.__camerasize / 2 * this.__scale, 0, (0, _Math.toRadians)(360));
@@ -3198,7 +3343,8 @@ var TwoD = /*#__PURE__*/function () {
     key: "addEntity",
     value: function addEntity(entity) {
       entity.color = entity.color || "grey";
-      this.entities.push(entity);
+
+      this.__entities.push(entity);
     }
   }]);
 
@@ -3206,55 +3352,7 @@ var TwoD = /*#__PURE__*/function () {
 }();
 
 exports.default = TwoD;
-},{"../../utils/Math":"src/classes/utils/Math.js","../raycast/Ray":"src/classes/renderers/raycast/Ray.js"}],"src/classes/renderers/raycast/Plane.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-var Plane = /*#__PURE__*/function () {
-  function Plane(handler, texture) {
-    _classCallCheck(this, Plane);
-
-    this.__handler = handler;
-    this.__camera = this.__handler.getCamera();
-    console.log({
-      camera: this.__camera
-    });
-    this.__width = this.__camera.width;
-    this.__height = this.__camera.height;
-    this.__texture = texture;
-    this.__fov = this.__camera.fov / 2;
-  }
-
-  _createClass(Plane, [{
-    key: "draw",
-    value: function draw(ctx) {
-      var xOffset = this.__camera.position.x;
-      var yOffset = this.__camera.position.y;
-
-      var farX1 = this.__camera.position.x + Math.cos(this.__camera.angle - this.__fov) * this.__camera.projectionDistance;
-
-      var farY1 = this.__camera.position.y + Math.sin(this.__camera.angle - this.__fov) * this.__camera.projectionDistance;
-
-      var nearX1 = this.__camera.position.x + Math.cos(this.__camera.angle - this.__fov) * 0.01;
-      var nearY1 = this.__camera.position.y + Math.sin(this.__camera.angle - this.__fov) * 0.01;
-    }
-  }]);
-
-  return Plane;
-}();
-
-exports.default = Plane;
-},{}],"src/classes/renderers/raycast/index.js":[function(require,module,exports) {
+},{"../../utils/Math":"src/classes/utils/Math.js","../raycast/Ray":"src/classes/renderers/raycast/Ray.js","../../Map":"src/classes/Map.js"}],"src/classes/renderers/raycast/index.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -3267,8 +3365,6 @@ var _Math = require("../../utils/Math");
 var _Ray = _interopRequireDefault(require("../raycast/Ray"));
 
 var _Map = _interopRequireDefault(require("../../Map"));
-
-var _Plane = _interopRequireDefault(require("./Plane"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -3296,13 +3392,12 @@ var RayCast = /*#__PURE__*/function () {
     this.__height = this.__handler.getGame().height;
     this.__ctx = ctx;
     this.__configs = configs;
-    this.entities = [];
+    this.__entities = [];
     this.__rays = [];
     this.__scale = scale;
-    this.__siteDistance = this.__width * 0.5 / Math.tan((0, _Math.toRadians)(30));
+    this.__siteDistance = 20 * _Map.default.TILE_SIZE;
     this.__map = map;
     this.__wallShade = 0.7;
-    this.__floorPlane = new _Plane.default(this.__handler, this.__map.floorMap);
   }
 
   _createClass(RayCast, [{
@@ -3326,18 +3421,22 @@ var RayCast = /*#__PURE__*/function () {
   }, {
     key: "render",
     value: function render(ctx) {
-      //var gradient = ctx.createLinearGradient(0, 0, 0, this.__height)
+      var _this = this;
+
+      // var gradient = ctx.createLinearGradient(0, 0, 0, this.__height)
+      // gradient.addColorStop(0, "rgb(128, 128, 128)")
+      // gradient.addColorStop(0.3, "rgb(108, 108, 108)")
+      // gradient.addColorStop(0.5, "#000000")
+      // gradient.addColorStop(0.7, "rgb(50,50,50)")
+      // gradient.addColorStop(1, "rgb(70,70,70)")
+      // ctx.fillStyle = gradient
+      // ctx.fillRect(0, 0, this.__width, this.__height)
       // Add three color stops
       var multiplier = this.__camera.tilt / 10;
-      var rgbval = 180 - multiplier;
-      var rgb = "rgb(".concat(rgbval, ",").concat(rgbval, ",").concat(rgbval, ")"); // gradient.addColorStop(0, rgb)
-      // gradient.addColorStop(rangeMap(this.__camera.tilt, -200, 200, 1, 0), "#222222")
-      // gradient.addColorStop(1, rgb)
-      // // Set the fill style and draw a rectangle
-      // ctx.fillStyle = gradient
-
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, this.__width, this.__height);
+      ctx.fillStyle = "rgb(128, 128, 128)";
+      ctx.fillRect(0, 0, this.__width, this.__height / 2);
+      ctx.fillStyle = "rgb(70,70,70)";
+      ctx.fillRect(0, this.__height / 2, this.__width, this.__height / 2);
 
       for (var column = 0; column < this.__rays.length; column++) {
         var ray = this.__rays[column];
@@ -3346,20 +3445,47 @@ var RayCast = /*#__PURE__*/function () {
 
         var wallPosition = this.__height * 0.5 - wallHeight * 0.5;
         wallPosition -= rayDistance * this.__camera.tilt / rayDistance;
-        var fillShade = (0, _Math.rangeMap)(Math.min(rayDistance, this.__siteDistance), 0, this.__siteDistance, 0, 1);
+        var fillShade = 0.3;
         ray.texture.drawImageSlice(ctx, ray.textureOffset, column, wallPosition, 1, wallHeight);
-        if (!ray.verticalHit) fillShade += 0.2;
+        if (!ray.verticalHit) fillShade *= 2;
         ctx.globalAlpha = fillShade;
         ctx.fillStyle = "black";
         ctx.fillRect(column, wallPosition, 1, wallHeight);
         ctx.globalAlpha = 1;
       }
+
+      this.__entities.forEach(function (entity) {
+        var angle = (0, _Math.vectorAngle)(entity.position, _this.__camera.position);
+        var visibleAngle = _this.__camera.angle - angle;
+        var distance = (0, _Math.vectorDistance)(_this.__camera.position, entity.position);
+        var entityDistance = distance * Math.cos(angle - _this.__camera.angle);
+        var entitySize = _Map.default.TILE_SIZE / entityDistance * _this.__camera.projectionDistance;
+
+        var entityPositionX = _this.__width * 0.5 - Math.tan(visibleAngle) * _this.__camera.projectionDistance;
+
+        var entityPositionY = _this.__height * 0.5 - entitySize * 0.5; //console.log({ entityPositionX, width: this.__width })
+
+        if (visibleAngle < _this.__camera.fov / 2 || visibleAngle > -_this.__camera.fov / 2) {
+          if (entityPositionX > 0 && entityPositionX < _this.__width) {
+            for (var i = 0; i < entitySize; i++) {
+              var _column = Math.floor(entityPositionX) + i;
+
+              if (_column > 0 && _column < _this.__width) {
+                var _ray = _this.__rays[_column]; //drawImageSlice(ctx, ray.textureOffset, column, wallPosition, 1, wallHeight)
+
+                if (distance < _ray.distance) {
+                  entity.sprite.drawImageSlice(ctx, entityPositionX + _column, _column, entityPositionY, 1, entitySize);
+                }
+              }
+            }
+          }
+        }
+      });
     }
   }, {
     key: "addEntity",
     value: function addEntity(entity) {
-      entity.color = entity.color || "grey";
-      this.entities.push(entity);
+      this.__entities.push(entity);
     }
   }]);
 
@@ -3367,7 +3493,7 @@ var RayCast = /*#__PURE__*/function () {
 }();
 
 exports.default = RayCast;
-},{"../../utils/Math":"src/classes/utils/Math.js","../raycast/Ray":"src/classes/renderers/raycast/Ray.js","../../Map":"src/classes/Map.js","./Plane":"src/classes/renderers/raycast/Plane.js"}],"src/classes/states/GameState.js":[function(require,module,exports) {
+},{"../../utils/Math":"src/classes/utils/Math.js","../raycast/Ray":"src/classes/renderers/raycast/Ray.js","../../Map":"src/classes/Map.js"}],"src/classes/states/GameState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -3417,12 +3543,9 @@ var GameState = /*#__PURE__*/function () {
       var _this = this;
 
       this.__scale = 0.3;
-      this.__fov = (0, _Math.toRadians)(80);
-      this.__map = new _Map.default(this.__handler.getLevel());
-
-      var player = this.__map.getEntities().player;
-
-      this.__player = new _Player.Player(this.__handler, player.position.x * _Map.default.TILE_SIZE, player.position.y * _Map.default.TILE_SIZE, _Map.default.TILE_SIZE * 0.2, _Map.default.TILE_SIZE * 0.5);
+      this.__fov = (0, _Math.toRadians)(90);
+      this.__map = new _Map.default(this.__handler);
+      this.__player = this.__map.getPlayer();
       this.__camera = new _Camera.default(0, 0, this.__handler.getGame().width, this.__handler.getGame().height, _Map.default.TILE_SIZE * 0.5, this.__fov, 0);
 
       this.__handler.setCamera(this.__camera);
@@ -3438,24 +3561,10 @@ var GameState = /*#__PURE__*/function () {
       this.__minimapRenderer = new _d.default(this.__handler, this.__ctx, this.__map, this.__scale, renderConfigs);
       this.__raycastRenderer = new _raycast.default(this.__handler, this.__ctx, this.__map, this.__scale, renderConfigs);
 
-      this.__map.grid.forEach(function (columns, rowIndex) {
-        columns.map(function (wall, columnIndex) {
-          if (wall == 1) {
-            var entity = new _entities.default(_this.__handler, columnIndex * _Map.default.TILE_SIZE, rowIndex * _Map.default.TILE_SIZE, _Map.default.TILE_SIZE, _Map.default.TILE_SIZE, 0, 0, "blue");
-
-            _this.__minimapRenderer.addEntity(entity);
-
-            _this.__raycastRenderer.addEntity(entity);
-          }
-        });
-      });
-
       this.__map.getEntities().enemies.forEach(function (enemy) {
-        var entity = new _entities.default(_this.__handler, enemy.position.x * _Map.default.TILE_SIZE, enemy.position.y * _Map.default.TILE_SIZE, _Map.default.TILE_SIZE * 0.5, _Map.default.TILE_SIZE * 0.5, 0, 0, "red");
+        _this.__minimapRenderer.addEntity(enemy);
 
-        _this.__minimapRenderer.addEntity(entity);
-
-        _this.__raycastRenderer.addEntity(entity);
+        _this.__raycastRenderer.addEntity(enemy);
       });
 
       this.__camera.followEntity(this.__player);
@@ -3475,8 +3584,6 @@ var GameState = /*#__PURE__*/function () {
       this.__raycastRenderer.render(ctx);
 
       this.__minimapRenderer.render(ctx);
-
-      this.__map.__floorMap.drawImage(ctx, 0, 0, this.__handler.getGame().width, this.__handler.getGame().height, 0.5, 0, 0);
     }
   }, {
     key: "map",
@@ -3676,7 +3783,7 @@ exports.default = void 0;
 
 var _Map = _interopRequireDefault(require("./Map.js"));
 
-var _Texture = _interopRequireDefault(require("./renderers/raycast/Texture.js"));
+var _Texture = _interopRequireDefault(require("./graphics/Texture.js"));
 
 var _ImageLoader = _interopRequireDefault(require("./graphics/ImageLoader.js"));
 
@@ -4067,7 +4174,7 @@ var Level = /*#__PURE__*/function () {
 }();
 
 exports.default = Level;
-},{"./Map.js":"src/classes/Map.js","./renderers/raycast/Texture.js":"src/classes/renderers/raycast/Texture.js","./graphics/ImageLoader.js":"src/classes/graphics/ImageLoader.js","./utils/AssetLoader.js":"src/classes/utils/AssetLoader.js"}],"src/classes/controller/Menu.js":[function(require,module,exports) {
+},{"./Map.js":"src/classes/Map.js","./graphics/Texture.js":"src/classes/graphics/Texture.js","./graphics/ImageLoader.js":"src/classes/graphics/ImageLoader.js","./utils/AssetLoader.js":"src/classes/utils/AssetLoader.js"}],"src/classes/controller/Menu.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -4478,6 +4585,8 @@ var LevelSelectState = /*#__PURE__*/function () {
 
                     lvl.on("status_change", console.log);
                     lvl.on("load_complete", function () {
+                      _this.__controller.deconstruct();
+
                       _this.__handler.getGame().setState("game");
                     });
                   });
@@ -4664,7 +4773,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54505" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57425" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

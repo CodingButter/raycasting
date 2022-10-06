@@ -15,17 +15,10 @@ export default class GameState {
   }
   setup() {
     this.__scale = 0.3
-    this.__fov = toRadians(80)
-    this.__map = new Map(this.__handler.getLevel())
+    this.__fov = toRadians(90)
+    this.__map = new Map(this.__handler)
 
-    const player = this.__map.getEntities().player
-    this.__player = new Player(
-      this.__handler,
-      player.position.x * Map.TILE_SIZE,
-      player.position.y * Map.TILE_SIZE,
-      Map.TILE_SIZE * 0.2,
-      Map.TILE_SIZE * 0.5
-    )
+    this.__player = this.__map.getPlayer()
 
     this.__camera = new Camera(
       0,
@@ -58,37 +51,10 @@ export default class GameState {
       this.__scale,
       renderConfigs
     )
-    this.__map.grid.forEach((columns, rowIndex) => {
-      columns.map((wall, columnIndex) => {
-        if (wall == 1) {
-          const entity = new Entity(
-            this.__handler,
-            columnIndex * Map.TILE_SIZE,
-            rowIndex * Map.TILE_SIZE,
-            Map.TILE_SIZE,
-            Map.TILE_SIZE,
-            0,
-            0,
-            "blue"
-          )
-          this.__minimapRenderer.addEntity(entity)
-          this.__raycastRenderer.addEntity(entity)
-        }
-      })
-    })
+
     this.__map.getEntities().enemies.forEach((enemy) => {
-      const entity = new Entity(
-        this.__handler,
-        enemy.position.x * Map.TILE_SIZE,
-        enemy.position.y * Map.TILE_SIZE,
-        Map.TILE_SIZE * 0.5,
-        Map.TILE_SIZE * 0.5,
-        0,
-        0,
-        "red"
-      )
-      this.__minimapRenderer.addEntity(entity)
-      this.__raycastRenderer.addEntity(entity)
+      this.__minimapRenderer.addEntity(enemy)
+      this.__raycastRenderer.addEntity(enemy)
     })
     this.__camera.followEntity(this.__player)
   }
@@ -102,16 +68,6 @@ export default class GameState {
   draw(ctx) {
     this.__raycastRenderer.render(ctx)
     this.__minimapRenderer.render(ctx)
-    this.__map.__floorMap.drawImage(
-      ctx,
-      0,
-      0,
-      this.__handler.getGame().width,
-      this.__handler.getGame().height,
-      0.5,
-      0,
-      0
-    )
   }
   get map() {
     return this.__map

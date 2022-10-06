@@ -19,7 +19,9 @@
       "chair": "chair.jpg"
     },
     "entities": {
-      "skeleton": "skeleton.png"
+      "player": "skeleton.png",
+      "skeleton": "skeleton.png",
+      "lizard": "lizard.png"
     }
   },
   "walls": [

@@ -1,4 +1,4 @@
-import Map from "../../Map"
+import Map from "../Map"
 export default class Texture {
   constructor(canvas) {
     this.__width = canvas.width
@@ -7,13 +7,8 @@ export default class Texture {
     const ctx = canvas.getContext("2d")
     this.__imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   }
-  drawImage(ctx, x, y, w, h, radians = 0, skewX = 0, skewY = 0) {
-    ctx.save()
-    ctx.translate(-w / 2, -h / 2)
-    ctx.rotate(radians)
+  drawImage(ctx, x, y, w, h) {
     ctx.drawImage(this.__canvas, x, y, w, h)
-    ctx.translate(w / 2, h / 2)
-    ctx.restore()
   }
 
   drawImageSlice(ctx, textureOffset, x, y, w, h) {
@@ -21,11 +16,23 @@ export default class Texture {
     const sliceX = Math.floor(sliceWidth * textureOffset)
     ctx.drawImage(this.__canvas, sliceX, 0, 1, this.__height, x, y, w, h)
   }
-
+  drawImageRotatedSlice(ctx, x, y, xOffset, yOffset, radians, distance, sliceHeight) {
+    const tmpCanvas = document.createElement("canvas")
+    tmpCanvas.width = 1
+    tmpCanvas.height = sliceHeight
+    const tmpCtx = tmpCanvas.getContext("2d")
+    tmpCtx.save()
+    tmpCtx.rotate(-radians)
+    tmpCtx.drawImage(this.__canvas, 0, 0, 1, distance, xOffset, yOffset, 1, distance)
+    tmpCtx.restore()
+    ctx.drawImage(tmpCanvas, x, y, 1, sliceHeight)
+  }
   drawPixel(ctx, px, py, x, y, w) {
     ctx.drawImage(this.__canvas, px, py, 1, w, x, y, 1, w)
   }
-
+  getImage() {
+    return this.__canvas
+  }
   putImageData(ctx, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight) {
     var data = this.__imageData.data
     var height = this.__canvas.height

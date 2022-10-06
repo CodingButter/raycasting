@@ -1,4 +1,4 @@
-import { toDegrees, toRadians, Vector } from "../utils/Math"
+import { normalizeAngle, toDegrees, toRadians, Vector } from "../utils/Math"
 export default class Camera {
   constructor(x, y, screenResolutionWidth, screenResolutionHeight, height, fov, angle) {
     this.__position = new Vector(x, y)

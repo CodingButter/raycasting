@@ -1,6 +1,6 @@
-import { toRadians } from "../../utils/Math"
+import { toRadians, Vector, vectorAngle, vectorDistance, normalizeAngle } from "../../utils/Math"
 import Ray from "../raycast/Ray"
-
+import Map from "../../Map"
 export default class TwoD {
   constructor(handler, ctx, map, scale, configs = {}) {
     this.__handler = handler
@@ -8,10 +8,10 @@ export default class TwoD {
     this.__scale = scale
     this.__width = this.__handler.getGame().width
     this.__height = this.__handler.getGame().height
-    this.__camerasize = 10
+    this.__camerasize = Map.TILE_SIZE
     this.__ctx = ctx
     this.__configs = configs
-    this.entities = []
+    this.__entities = []
     this.__rays = []
     this.__map = map
   }
@@ -25,7 +25,9 @@ export default class TwoD {
       var ray = new Ray(this.__width, this.__height, this.__camera.position, rayAngle, this.__map)
       ray.cast()
       ctx.strokeStyle = "white"
+      ctx.globalAlpha = 0.1
       ray.drawRay(ctx, this.__scale)
+      ctx.globalAlpha = 1
       this.__rays.push(ray)
       rayAngle += this.__camera.fov / this.__camera.width
     }
@@ -37,17 +39,40 @@ export default class TwoD {
     ctx.fillStyle = "black"
     ctx.fillRect(0, 0, this.__map.getWidth() * this.__scale, this.__map.getHeight() * this.__scale)
     ctx.strokeStyle = this.__configs.strokeStyle || ""
-    this.entities.forEach((entity) => {
+    this.__map.grid.forEach((columns, rowIndex) => {
+      columns.map((wall, columnIndex) => {
+        if (wall > 0) {
+          ctx.fillStyle = "blue"
+          ctx.fillRect(
+            columnIndex * Map.TILE_SIZE * this.__scale,
+            rowIndex * Map.TILE_SIZE * this.__scale,
+            Map.TILE_SIZE * this.__scale,
+            Map.TILE_SIZE * this.__scale
+          )
+          ctx.strokeRect(
+            columnIndex * Map.TILE_SIZE * this.__scale,
+            rowIndex * Map.TILE_SIZE * this.__scale,
+            Map.TILE_SIZE * this.__scale,
+            Map.TILE_SIZE * this.__scale
+          )
+        }
+      })
+    })
+    this.__entities.forEach((entity) => {
+      const position = new Vector(
+        entity.position.x - entity.width / 2,
+        entity.position.y - entity.height / 2
+      )
       ctx.fillStyle = entity.color
       ctx.fillRect(
-        entity.position.x * this.__scale,
-        entity.position.y * this.__scale,
+        position.x * this.__scale,
+        position.y * this.__scale,
         entity.width * this.__scale,
         entity.height * this.__scale
       )
       ctx.strokeRect(
-        entity.position.x * this.__scale,
-        entity.position.y * this.__scale,
+        position.x * this.__scale,
+        position.y * this.__scale,
         entity.width * this.__scale,
         entity.height * this.__scale
       )
@@ -81,6 +106,6 @@ export default class TwoD {
 
   addEntity(entity) {
     entity.color = entity.color || "grey"
-    this.entities.push(entity)
+    this.__entities.push(entity)
   }
 }

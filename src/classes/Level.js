@@ -1,5 +1,5 @@
 import Map from "./Map.js"
-import Texture from "./renderers/raycast/Texture.js"
+import Texture from "./graphics/Texture.js"
 import ImageLoader from "./graphics/ImageLoader.js"
 import AssetLoader from "./utils/AssetLoader.js"
 const levelsJson = "./levels/levels.json"

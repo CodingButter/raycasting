@@ -2,7 +2,6 @@ export default class Plane {
   constructor(handler, texture) {
     this.__handler = handler
     this.__camera = this.__handler.getCamera()
-    console.log({ camera: this.__camera })
     this.__width = this.__camera.width
     this.__height = this.__camera.height
     this.__texture = texture
