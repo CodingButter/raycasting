@@ -85,14 +85,14 @@ export default class RayCast {
         if (entityPositionX > 0 && entityPositionX < this.__width) {
           for (var i = 0; i < entitySize; i++) {
             const column = Math.floor(entityPositionX) + i
-            if (column > 0 && column < this.__width) {
+            if (column > 0 && column < entitySize) {
               const ray = this.__rays[column]
               //drawImageSlice(ctx, ray.textureOffset, column, wallPosition, 1, wallHeight)
               if (distance < ray.distance) {
                 entity.sprite.drawImageSlice(
                   ctx,
+                  entityPositionX - column,
                   entityPositionX + column,
-                  column,
                   entityPositionY,
                   1,
                   entitySize

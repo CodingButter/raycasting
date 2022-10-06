@@ -3470,11 +3470,11 @@ var RayCast = /*#__PURE__*/function () {
             for (var i = 0; i < entitySize; i++) {
               var _column = Math.floor(entityPositionX) + i;
 
-              if (_column > 0 && _column < _this.__width) {
+              if (_column > 0 && _column < entitySize) {
                 var _ray = _this.__rays[_column]; //drawImageSlice(ctx, ray.textureOffset, column, wallPosition, 1, wallHeight)
 
                 if (distance < _ray.distance) {
-                  entity.sprite.drawImageSlice(ctx, entityPositionX + _column, _column, entityPositionY, 1, entitySize);
+                  entity.sprite.drawImageSlice(ctx, entityPositionX - _column, entityPositionX + _column, entityPositionY, 1, entitySize);
                 }
               }
             }
