@@ -22,7 +22,7 @@ export default class RayCast {
     this.__scale = scale
     this.__siteDistance = 20 * Map.TILE_SIZE
     this.__map = map
-    this.__wallShade = 0.7
+    this.__distanceShade = 0.3
   }
 
   changeConfig(configs) {
@@ -48,20 +48,24 @@ export default class RayCast {
     ctx.fillStyle = "rgb(70,70,70)"
     ctx.fillRect(0, this.__height / 2, this.__width, this.__height / 2)
 
-    for (var column = 0; column < this.__rays.length; column++) {
-      const ray = this.__rays[column]
+    this.__rays.forEach((ray, column) => {
       const rayDistance = ray.distance * Math.cos(ray.angle - this.__camera.rotation)
       const wallHeight = (Map.TILE_SIZE / rayDistance) * this.__camera.projectionDistance
       var wallPosition = this.__height * 0.5 - wallHeight * 0.5
       wallPosition -= (rayDistance * this.__camera.tilt) / rayDistance
-      const fillShade = 0.3
       ray.texture.drawImageSlice(ctx, ray.textureOffset, column, wallPosition, 1, wallHeight)
-      if (!ray.verticalHit) fillShade *= 2
-      ctx.globalAlpha = fillShade
-      ctx.fillStyle = "black"
-      ctx.fillRect(column, wallPosition, 1, wallHeight)
-      ctx.globalAlpha = 1
-    }
+      this.drawShade(
+        ctx,
+        rayDistance,
+        column,
+        wallPosition,
+        1,
+        wallHeight,
+        !ray.verticalHit ? 1.5 : 1
+      )
+    })
+
+    // Render Entities
     this.__entities
       .filter((entity) => {
         const visibleAngle = this.__camera.rotation - entity.angle
@@ -69,6 +73,7 @@ export default class RayCast {
       })
       .sort((a, b) => (a.distance < b.distance ? 1 : -1))
       .forEach((entity) => {
+        entity.sprite.brightness = rangeMap(entity.distance, 0, this.__siteDistance, 1, 0)
         const angle = vectorAngle(entity.position, this.__camera.position)
         const visibleAngle = this.__camera.rotation - angle
         const entityDistance = entity.distance * Math.cos(angle - this.__camera.rotation)
@@ -89,9 +94,17 @@ export default class RayCast {
             }
           }
         }
+        entity.render()
       })
   }
 
+  drawShade(ctx, distance, x, y, w, h, multiplier = 1) {
+    const shade = rangeMap(distance, 0, this.__siteDistance, this.__distanceShade * multiplier, 1)
+    ctx.globalAlpha = shade
+    ctx.fillStyle = "black"
+    ctx.fillRect(x, y, w, h)
+    ctx.globalAlpha = 1
+  }
   addEntity(entity) {
     this.__entities.push(entity)
   }

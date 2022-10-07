@@ -14,13 +14,12 @@ export default class GameState {
     this.__controller.deconstruct()
   }
   setup() {
-    this.__scale = 0.2
+    this.__scale = 0.35
     this.__fov = toRadians(90)
     this.__map = new Map(this.__handler)
     this.__width = this.__handler.getGame().width
     this.__height = this.__handler.getGame().height
     this.__player = this.__map.getPlayer()
-
     this.__camera = new Camera(
       this.__player.position.x,
       this.__player.position.y,
@@ -62,12 +61,14 @@ export default class GameState {
 
   update(dt) {
     this.__player.update(dt, this.__map)
-    this.__map.getEntities().enemies.forEach((enemy) => {
-      enemy.distance = vectorDistance(this.__camera.position, enemy.position)
-      enemy.angle = vectorAngle(this.__camera.position, enemy.position)
-      enemy.update(dt, this.__map)
-    })
     this.__camera.followEntity(this.__player)
+    Object.keys(this.__map.getEntities()).forEach((key) => {
+      this.__map.getEntities()[key].forEach((entity) => {
+        entity.distance = vectorDistance(this.__camera.position, entity.position)
+        entity.angle = vectorAngle(this.__camera.position, entity.position)
+        //}
+      })
+    })
   }
 
   draw(ctx) {

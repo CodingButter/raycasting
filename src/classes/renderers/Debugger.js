@@ -13,16 +13,16 @@ export default class Debuger {
         round: true,
       }
     })
-    this.__performanceData["ticks"].round = false
   }
   draw(ctx) {
     const now = Date.now()
     const dt = now - this.__performanceData.fps.data.last
     this.__performanceData.fps.data.last = now
     this.__performanceData.fps.currentValue = 1000 / dt
-    if (this.__performanceData.fps.values.length < 100) {
-      this.__performanceData.fps.values.push(this.__performanceData.fps.currentValue)
-    }
+    if (this.__performanceData.fps.values.length < 100) this.__performanceData.fps.values.shift()
+
+    this.__performanceData.fps.values.push(this.__performanceData.fps.currentValue)
+
     this.__performanceData.fps.average =
       this.__performanceData.fps.values.reduce((a, b) => a + b) /
       this.__performanceData.fps.values.length
@@ -44,9 +44,9 @@ export default class Debuger {
 
   update(dt) {
     this.__performanceData.ticks.currentValue = 1000 / (dt * 1000)
-    if (this.__performanceData.ticks.values.length < 100) {
-      this.__performanceData.ticks.values.push(this.__performanceData.ticks.currentValue)
-    }
+    if (this.__performanceData.ticks.values.length > 100)
+      this.__performanceData.ticks.values.shift()
+    this.__performanceData.ticks.values.push(this.__performanceData.ticks.currentValue)
     this.__performanceData.ticks.average =
       this.__performanceData.ticks.values.reduce((a, b) => a + b) /
       this.__performanceData.ticks.values.length

@@ -1,7 +1,7 @@
-import Texture from "./graphics/Texture"
 import Sprite from "./graphics/Sprite"
-import { Player } from "./entities/Player"
-import { Enemy } from "./entities/Enemies/Enemy"
+import Player from "./entities/Player"
+import Enemy from "./entities/Enemies/Enemy"
+import ThreeDEntity from "./entities/ThreeDEntity"
 const TILE_SIZE = 32
 export default class Map {
   constructor(handler) {
@@ -20,6 +20,17 @@ export default class Map {
       new Sprite(this.__textures.entities.player)
     )
     const enemies = level.getEntities().enemies.map((enemy) => {
+      if (enemy.geometry)
+        return new ThreeDEntity(
+          this.__handler,
+          enemy.position.x * Map.TILE_SIZE,
+          enemy.position.y * Map.TILE_SIZE,
+          Map.TILE_SIZE,
+          Map.TILE_SIZE,
+          0,
+          0,
+          enemy.geometry
+        )
       return new Enemy(
         this.__handler,
         enemy.position.x * Map.TILE_SIZE,
@@ -50,6 +61,9 @@ export default class Map {
   }
   getPlayer() {
     return this.__player
+  }
+  get textures() {
+    return this.__textures
   }
   getWallTextureAt(x, y) {
     const column = Math.floor(x / Map.TILE_SIZE)

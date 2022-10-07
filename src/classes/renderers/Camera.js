@@ -8,6 +8,7 @@ export default class Camera {
     this.__height = height
     this.__width = this.__screenResolutionWidth
     this.__rotation = rotation
+    this.__movement = new Vector(0, 0)
     this.__tilt = 0
 
     this.__projectionDistance = (screenResolutionWidth * 0.5) / Math.tan(this.__fov * 0.5)
@@ -16,6 +17,7 @@ export default class Camera {
   followEntity(entity) {
     this.__position = entity.position
     this.__rotation = entity.rotation
+    this.__movement = entity.movement
     this.__tilt = 0 // entity.tilt
     this.__height = entity.height
   }
@@ -25,13 +27,19 @@ export default class Camera {
   get position() {
     return this.__position
   }
+
   get rotation() {
     return this.__rotation
   }
   get tilt() {
     return this.__tilt
   }
-
+  get movement() {
+    return this.__movement
+  }
+  get currentSpeed() {
+    return this.__movement.magnitude
+  }
   get fov() {
     return this.__fov
   }

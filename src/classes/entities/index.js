@@ -10,6 +10,7 @@ export default class Entity {
     this.__sprite = sprite
     this.__distance = 0.002
     this.__tilt = 0
+    this.__movement = new Vector(0, 0)
     this.__speed = speed
     this.__direction = {
       walk: 0,
@@ -18,15 +19,20 @@ export default class Entity {
   }
   moveX(x) {
     this.__position.x += x
+    this.__movement.x = x
   }
   moveY(y) {
     this.__position.y += y
+    this.__movement.y = y
   }
   move(x, y, map) {
     if (!map.hasWallAt(this.__position.x + x, this.__position.y + y)) {
       this.moveX(x)
       this.moveY(y)
     }
+  }
+  render() {
+    // for 3d entities
   }
   update(dt, map) {
     this.move(
@@ -45,6 +51,12 @@ export default class Entity {
   }
   get sprite() {
     return this.__sprite
+  }
+  get currentSpeed() {
+    return this.__movement.magnitude
+  }
+  get movement() {
+    return this.__movement
   }
   get position() {
     return this.__position

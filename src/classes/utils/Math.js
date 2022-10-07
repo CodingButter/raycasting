@@ -30,6 +30,9 @@ export class Vector {
     this.__y = y
     this.__z = z
   }
+  get magnitude() {
+    return Math.sqrt(this.__x * this.__x + this.__y * this.__y + this.__z * this.__z)
+  }
   get x() {
     return this.__x
   }

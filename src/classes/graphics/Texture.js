@@ -4,29 +4,21 @@ export default class Texture {
     this.__width = canvas.width
     this.__height = canvas.height
     this.__canvas = canvas
+    this.__brightness = 1
     const ctx = canvas.getContext("2d")
-    this.__imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+
+    this.__imageData = ctx?.getImageData(0, 0, canvas.width, canvas.height)
   }
-  drawImage(ctx, x, y, w, h) {
-    ctx.drawImage(this.__canvas, x, y, w, h)
+  drawImage(ctx, x, y, w, h, sx, sy, sw, sh) {
+    ctx.drawImage(this.__canvas, x, y, w, h, sx, sy, sw, sh)
   }
 
   drawImageSlice(ctx, textureOffset, x, y, w, h) {
     var sliceWidth = this.__width / Map.TILE_SIZE
     const sliceX = Math.floor(sliceWidth * textureOffset)
-    ctx.drawImage(this.__canvas, sliceX, 0, 1, this.__height, x, y, w, h)
+    this.drawImage(ctx, sliceX, 0, 1, this.__height, x, y, w, h)
   }
-  drawImageRotatedSlice(ctx, x, y, xOffset, yOffset, radians, distance, sliceHeight) {
-    const tmpCanvas = document.createElement("canvas")
-    tmpCanvas.width = 1
-    tmpCanvas.height = sliceHeight
-    const tmpCtx = tmpCanvas.getContext("2d")
-    tmpCtx.save()
-    tmpCtx.rotate(-radians)
-    tmpCtx.drawImage(this.__canvas, 0, 0, 1, distance, xOffset, yOffset, 1, distance)
-    tmpCtx.restore()
-    ctx.drawImage(tmpCanvas, x, y, 1, sliceHeight)
-  }
+
   drawPixel(ctx, px, py, x, y, w) {
     ctx.drawImage(this.__canvas, px, py, 1, w, x, y, 1, w)
   }

@@ -41,6 +41,16 @@
         "x": 20,
         "y": 8
       }
+    },
+    {
+      "type": "lizard",
+      "geometry": "Cube",
+      "level": 12,
+      "health": 100,
+      "position": {
+        "x": 8,
+        "y": 8
+      }
     }
   ]
 }

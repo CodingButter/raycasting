@@ -11,7 +11,7 @@ export default class GameLoop {
       const dt = (now - lastUpdate) / 1000
       lastUpdate = now
       emitter.emit("update", dt)
-      !stopped && setTimeout(() => update(dt), 1)
+      !stopped && setTimeout(() => update(dt), 0)
     }
     function draw() {
       emitter.emit("draw")

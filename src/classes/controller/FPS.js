@@ -1,12 +1,12 @@
 import Entity from "../entities"
-
+import Emmiter from "../utils/Emitter"
 export default class FPS {
   constructor(canvas) {
     this.__lastmouse = { x: 0, y: 0 }
     this.__entity = new Entity(0, 0, 0, 0, 0)
     this.__canvas = canvas
     this.__keys = { W: 0, S: 0, D: 0, A: 0 }
-
+    this.__emmiter = new Emmiter()
     this.__canvas.addEventListener("mousemove", (e) => this.rotateCamera(e))
     document.addEventListener("keydown", (e) => this.startMove(e))
     document.addEventListener("keyup", (e) => this.stopMove(e))
