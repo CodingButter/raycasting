@@ -29,7 +29,7 @@ export default class FPS {
   }
 
   rotateCamera({ movementX, movementY }) {
-    this.__entity.angle += movementX / 1000
+    this.__entity.rotation += movementX / 1000
     this.__entity.tilt += movementY
   }
 

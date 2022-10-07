@@ -1,12 +1,14 @@
-import { toRadians, Vector } from "../utils/Math"
+import { toRadians, Vector, vectorDistance } from "../utils/Math"
 export default class Entity {
-  constructor(handler, x, y, width, height, speed = 0, angle = 0, sprite) {
+  constructor(handler, x, y, width, height, speed = 0, rotation = 0, sprite) {
     this.__handler = handler
     this.__position = new Vector(x, y)
     this.__width = width
     this.__height = height
-    this.__angle = angle
+    this.__rotation = rotation
+    this.__angle = 0
     this.__sprite = sprite
+    this.__distance = 0.002
     this.__tilt = 0
     this.__speed = speed
     this.__direction = {
@@ -28,15 +30,18 @@ export default class Entity {
   }
   update(dt, map) {
     this.move(
-      Math.cos(this.__angle) * this.__speed * this.direction.walk * dt || 0,
-      Math.sin(this.__angle) * this.__speed * this.direction.walk * dt || 0,
+      Math.cos(this.__rotation) * this.__speed * this.direction.walk * dt || 0,
+      Math.sin(this.__rotation) * this.__speed * this.direction.walk * dt || 0,
       map
     )
     this.move(
-      Math.cos(this.__angle + toRadians(90)) * this.__speed * this.direction.strafe * dt || 0,
-      Math.sin(this.__angle + toRadians(90)) * this.__speed * this.direction.strafe * dt || 0,
+      Math.cos(this.__rotation + toRadians(90)) * this.__speed * this.direction.strafe * dt || 0,
+      Math.sin(this.__rotation + toRadians(90)) * this.__speed * this.direction.strafe * dt || 0,
       map
     )
+  }
+  get angle() {
+    return this.__angle
   }
   get sprite() {
     return this.__sprite
@@ -50,22 +55,32 @@ export default class Entity {
   get height() {
     return this.__height
   }
-  get angle() {
-    return this.__angle
+  get rotation() {
+    return this.__rotation
   }
   get tilt() {
     return this.__tilt
   }
+  get distance() {
+    return this.__distance
+  }
   get direction() {
     return this.__direction
+  }
+  set angle(val) {
+    this.__angle = val
+  }
+  set distance(val) {
+    if (val === 0) val = 0.001
+    this.__distance = val
   }
   set direction(val) {
     this.__direction = val
   }
-  set angle(val) {
-    this.__angle = val
-    if (this.__angle < -Math.PI) this.__angle += Math.PI * 2
-    if (this.__angle > Math.PI) this.__angle -= Math.PI * 2
+  set rotation(val) {
+    this.__rotation = val
+    if (this.__rotation < -Math.PI) this.__rotation += Math.PI * 2
+    if (this.__rotation > Math.PI) this.__rotation -= Math.PI * 2
   }
 
   set tilt(val) {

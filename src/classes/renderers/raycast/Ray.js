@@ -183,4 +183,15 @@ export default class Ray {
     ctx.lineTo(this.__position.x * scale, this.__position.y * scale)
     ctx.stroke()
   }
+  static castAllRays(width, height, camera, map) {
+    const rays = []
+    for (var i = 0; i < width; i++) {
+      var rayAngle = camera.rotation + Math.atan((i - width * 0.5) / camera.projectionDistance)
+      var ray = new Ray(width, height, camera.position, rayAngle, map)
+      ray.cast()
+
+      rays.push(ray)
+    }
+    return rays
+  }
 }

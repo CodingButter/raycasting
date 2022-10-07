@@ -16,30 +16,12 @@
       }
     },
     {
-      "type": "lizard",
-      "level": 12,
-      "health": 100,
-      "position": {
-        "x": 25,
-        "y": 4
-      }
-    },
-    {
-      "type": "lizard",
-      "level": 12,
-      "health": 100,
-      "position": {
-        "x": 19,
-        "y": 12
-      }
-    },
-    {
-      "type": "lizard",
+      "type": "skeleton",
       "level": 12,
       "health": 100,
       "position": {
         "x": 20,
-        "y": 8
+        "y": 4
       }
     }
   ]

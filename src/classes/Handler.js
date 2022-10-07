@@ -1,6 +1,7 @@
 export default class Handler {
   constructor(game) {
     this.__game = game
+    this.__rays = []
   }
 
   getGame() {
@@ -17,5 +18,11 @@ export default class Handler {
   }
   getCamera() {
     return this.__camera
+  }
+  setRays(rays) {
+    this.__rays = rays
+  }
+  getRays() {
+    return this.__rays
   }
 }

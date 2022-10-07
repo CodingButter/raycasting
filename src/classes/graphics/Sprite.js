@@ -10,4 +10,10 @@ export default class Sprite {
   drawImageSlice(ctx, textureOffset, x, y, w, h) {
     this.__texture.drawImageSlice(ctx, textureOffset, x, y, w, h)
   }
+  get width() {
+    return this.__texture.width
+  }
+  get height() {
+    return this.__texture.height
+  }
 }

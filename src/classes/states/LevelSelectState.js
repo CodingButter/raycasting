@@ -19,7 +19,7 @@ export default class LevelSelectState {
         this.__controller,
         {
           x: this.__canvas.getWidth() / 2 - width / 2,
-          y: this.__canvas.getHeight() / 2 + height / 2 + index * 100,
+          y: height / 2 + index * (height + 20),
           width,
           height,
         },

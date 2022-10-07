@@ -4,6 +4,7 @@ import Canvas from "./display/Canvas"
 import State from "./states/State"
 import GameState from "./states/GameState"
 import LevelSelectState from "./states/LevelSelectState"
+import Debuger from "./renderers/Debugger"
 export default class Game {
   constructor(app, width, height) {
     this.__handler = new Handler(this)
@@ -15,6 +16,9 @@ export default class Game {
     this.__handler = new Handler(this)
     this.__gameState = new GameState(this.__handler)
     this.__levelSelectState = new LevelSelectState(this.__handler)
+    this.__debugger = new Debuger(this.__handler)
+    this.__debugger.toggle("fps")
+    this.__debugger.toggle("ticks")
     State.setState(this.__levelSelectState)
   }
   run() {
@@ -25,13 +29,16 @@ export default class Game {
 
   update(dt) {
     State.getState().update(dt)
+    this.__debugger.update(dt)
   }
+
   setState(state) {
     State.setState(this[`__${state}State`])
   }
   draw() {
     this.__ctx.clearRect(0, 0, this.__width, this.__height)
     State.getState().draw(this.__ctx)
+    this.__debugger.draw(this.__ctx)
   }
   get canvas() {
     return this.__canvas

@@ -18,22 +18,17 @@ export default class TwoD {
   changeConfig(configs) {
     this.__configs = { ...this.__configs, ...configs }
   }
-  castAllRays(ctx) {
-    var rayAngle = this.__camera.angle - this.__camera.fov / 2
+  drawRays(ctx) {
+    var rayAngle = this.__camera.rotation - this.__camera.fov / 2
     this.__rays = []
-    for (var i = 0; i < this.__camera.width; i++) {
-      var ray = new Ray(this.__width, this.__height, this.__camera.position, rayAngle, this.__map)
-      ray.cast()
+    this.__handler.getRays().forEach((ray) => {
       ctx.strokeStyle = "white"
       ctx.globalAlpha = 0.1
       ray.drawRay(ctx, this.__scale)
-      ctx.globalAlpha = 1
-      this.__rays.push(ray)
-      rayAngle += this.__camera.fov / this.__camera.width
-    }
+    })
   }
   render(ctx) {
-    this.castAllRays(ctx)
+    this.drawRays(ctx)
     ctx.save()
     ctx.globalAlpha = 0.6
     ctx.fillStyle = "black"
@@ -92,9 +87,11 @@ export default class TwoD {
 
     ctx.moveTo(this.__camera.position.x * this.__scale, this.__camera.position.y * this.__scale)
     ctx.lineTo(
-      (this.__camera.position.x + Math.cos(this.__camera.angle) * this.__camerasize) * this.__scale,
+      (this.__camera.position.x + Math.cos(this.__camera.rotation) * this.__camerasize) *
+        this.__scale,
 
-      (this.__camera.position.y + Math.sin(this.__camera.angle) * this.__camerasize) * this.__scale
+      (this.__camera.position.y + Math.sin(this.__camera.rotation) * this.__camerasize) *
+        this.__scale
     )
     ctx.stroke()
 
@@ -102,6 +99,7 @@ export default class TwoD {
     ctx.strokeStyle = "white"
     ctx.stroke()
     ctx.restore()
+    ctx.globalAlpha = 1
   }
 
   addEntity(entity) {

@@ -60,4 +60,10 @@ export default class Texture {
       }
     }
   }
+  get width() {
+    return this.__width
+  }
+  get height() {
+    return this.__height
+  }
 }

@@ -2,11 +2,10 @@ import "./styles.css"
 import "regenerator-runtime/runtime"
 import "core-js/modules/es6.promise"
 import Game from "./classes/Game"
-const resolution = {
-  width: 1024,
-  height: 1024 / 2,
-}
+const width = 1024
+const height = width / 2
 const appElement = document.getElementById("app")
-
-const game = new Game(appElement, resolution.width, resolution.height)
+appElement.style.width = `${width}px`
+appElement.style.height = `${height}px`
+const game = new Game(appElement, width, height)
 game.run()
